@@ -1,5 +1,84 @@
+import { useState } from "react"
+import Swal from "sweetalert2"
+
 function LoginModal({ isOpen, onClose }) {
+    const [formulario, setFormulario] = useState({
+        nombre: "",
+        apellido: "",
+        telefono: "",
+        correo: "",
+        password: "",
+        confirmarPassword: ""
+    })
+
     if (!isOpen) return null
+
+    const manejarCambio = (e) => {
+        setFormulario({
+            ...formulario,
+            [e.target.name]: e.target.value
+        })
+    }
+
+    const manejarRegistro = async (e) => {
+        e.preventDefault()
+
+        if (formulario.password !== formulario.confirmarPassword) {
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Las contraseñas no coinciden",
+                confirmButtonColor: "#0891b2",
+            })
+            return
+        }
+
+        const nuevoUsuario = {
+            nombre: formulario.nombre,
+            apellido: formulario.apellido,
+            telefono: formulario.telefono,
+            correo: formulario.correo,
+            password: formulario.password,
+            rol: "usuario"
+        }
+
+        try {
+            const respuesta = await fetch("http://localhost:3002/usuarios", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(nuevoUsuario)
+            })
+
+            if (respuesta.ok) {
+                setFormulario({
+                    nombre: "",
+                    apellido: "",
+                    telefono: "",
+                    correo: "",
+                    password: "",
+                    confirmarPassword: ""
+                })
+
+                Swal.fire({
+                    icon: "success",
+                    title: "¡Registro exitoso!",
+                    text: "Ya puedes iniciar sesión",
+                    confirmButtonColor: "#0891b2",
+                    timer: 1500,
+                    showConfirmButton: false,
+                })
+                onClose()
+            }
+        } catch (error) {
+            console.log(error)
+            Swal.fire({
+                icon: "error",
+                title: "Error de conexión",
+                text: "No es posible conectarse al servidor",
+                confirmButtonColor: "#0891b2",
+            })
+        }
+    }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={onClose}>
@@ -7,68 +86,59 @@ function LoginModal({ isOpen, onClose }) {
                 <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">
                     ✕
                 </button>
-
                 <h2 className="text-2xl font-bold text-center text-cyan-600 mb-1">
                     Registro
                 </h2>
                 <p className="text-center text-gray-500 text-sm mb-6">
                     Empieza a formar parte de la comunidad artistica
                 </p>
-
-                <div className="flex flex-col gap-4">
+                <form  onSubmit={manejarRegistro} className="flex flex-col gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Nombre
                         </label>
-                        <input type="text" placeholder="Nombre de usuario" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"/>
+                        <input type="text" name="nombre" placeholder="Nombre de usuario" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.nombre} onChange={manejarCambio} required/>
                     </div>
-
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Apellido
                         </label>
-                        <input type="text" placeholder="Ingresa tu apellido" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"/>
+                        <input type="text" name="apellido" placeholder="Ingresa tu apellido" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.apellido} onChange={manejarCambio} required/>
                     </div>
-                    
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Telefono
                         </label>
-                        <input type="text" placeholder="Numero telefonico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"/>
+                        <input type="text" name="telefono" placeholder="Numero telefonico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.telefono} onChange={manejarCambio} required/>
                     </div>
-
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Email
                         </label>
-                        <input type="email" placeholder="Correo Electronico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"/>
+                        <input type="email" name="correo" placeholder="Correo Electronico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.correo} onChange={manejarCambio}/>
                     </div>
-
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Contraseña
                         </label>
-                        <input type="password" placeholder="Contarseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"/>
+                        <input type="password" name="password" placeholder="Contarseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.password} onChange={manejarCambio}/>
                     </div>
-
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Confirmar Contraseña
                         </label>
-                        <input type="password" placeholder="Vuelve a ingresar tu Contraseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"/>
+                        <input type="password" name="confirmarPassword" placeholder="Vuelve a ingresar tu Contraseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.confirmarPassword} onChange={manejarCambio}/>
                     </div>
-
                     <button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 rounded-lg transition">
                         Confirmar
                     </button>
-
                     <p className="text-center text-sm text-gray-500">
                         ¿Ya tienes una cuenta? {" "}
                         <span className="text-cyan-600 hover:underline cursor-pointer font-medium">
                             Inicia sesion
                         </span>
                     </p>
-                </div>
+                </form>
             </div>
         </div>
     )

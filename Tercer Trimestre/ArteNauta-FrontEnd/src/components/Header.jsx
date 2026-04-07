@@ -2,7 +2,7 @@ import { useState } from "react"
 import InicioSesionModal from '../components/InicioSesionModal'
 import RegistroModal from "../components/RegistroModal"
 
-function Header({setPagina}){
+function Header({setPagina, setVista}){
     const [showLogin, setShowLogin] = useState(false)
     const [showRegistro, setShowRegistro] = useState(false)
     return(
@@ -18,7 +18,7 @@ function Header({setPagina}){
                     <button onClick={() => setShowLogin(true)} className="bg-cyan-600 box-border p-2 rounded mx-1 hover:bg-cyan-900">Iniciar Sesión</button>
                 </ul>
             </nav>
-            <InicioSesionModal isOpen={showLogin} onClose={() => setShowLogin(false)}/>
+            <InicioSesionModal isOpen={showLogin} onClose={() => setShowLogin(false)} setVista={setVista}/>
                 <RegistroModal isOpen={showRegistro} onClose={() => setShowRegistro(false)}/>
         </header>
     )
