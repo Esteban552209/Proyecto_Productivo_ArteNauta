@@ -38,8 +38,8 @@ function App() {
   return (
     <div className='flex flex-col min-h-screen'>
       <Header setPagina={setPagina} setVista={setVista}/>
+      <Hero pagina={pagina}/>
       <main className='flex-1'>
-        {pagina === "home" && <Hero/>}
         {pagina === "home" && <Categorias/>}
         {pagina === "contacto" && <Contacto/>}
       </main>

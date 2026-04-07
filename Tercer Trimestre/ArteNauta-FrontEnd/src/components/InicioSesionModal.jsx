@@ -27,26 +27,32 @@ function LoginModal({ isOpen, onClose, setVista }) {
 
         Swal.fire({
             icon: "success",
-        title: "¡Bienvenido de nuevo!",
-        text: "Inicio de sesión exitoso",
-        confirmButtonColor: "#0891b2",
-        background: "#ecfeff", 
-        color: "#164e63",
-        timer: 2000,
-        showConfirmButton: false,
+            title: "¡Bienvenido de nuevo!",
+            text: "Inicio de sesión exitoso",
+            confirmButtonColor: "#0891b2",
+            background: "#ecfeff", 
+            color: "#164e63",
+            timer: 2000,
+            showConfirmButton: false,
         })
     }else{
         console.log("datos incorrectos")
         Swal.fire({
-        icon: "error",
-        title: "Ups...",
-        text: "Correo o contraseña incorrectos",
-        confirmButtonColor: "#0891b2",
-        confirmButtonText: "Intentar de nuevo",
-})
+            icon: "error",
+            title: "Ups...",
+            text: "Correo o contraseña incorrectos",
+            confirmButtonColor: "#0891b2",
+            confirmButtonText: "Intentar de nuevo",
+        })
     }
     }catch(error){
         console.log(error)
+        Swal.fire({
+            icon: "error",                        
+            title: "Error de conexión",
+            text: "No es posible conectarse al servidor",
+            confirmButtonColor: "#0891b2",
+        })
     }
 }
     return (
