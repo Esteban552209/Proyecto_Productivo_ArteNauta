@@ -36,7 +36,7 @@ function LoginModal({ isOpen, onClose }) {
         const nuevoUsuario = {
             nombre: formulario.nombre,
             apellido: formulario.apellido,
-            telefono: formulario.telefono,
+            telefono: Number(formulario.telefono),
             correo: formulario.correo,
             password: formulario.password,
             rol: "usuario"
@@ -109,7 +109,7 @@ function LoginModal({ isOpen, onClose }) {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Telefono
                         </label>
-                        <input type="text" name="telefono" placeholder="Numero telefonico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.telefono} onChange={manejarCambio} required/>
+                        <input type="number" name="telefono" placeholder="Numero telefonico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" value={formulario.telefono} onChange={manejarCambio} required/>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">

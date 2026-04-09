@@ -11,9 +11,9 @@
     },
     {
       "id": "2",
-      "nombre": "Pepito",
+      "nombre": "Pepitoo",
       "apellido": "Rodriguez",
-      "telefono": 0,
+      "telefono": 123232,
       "correo": "usuario@gmail.com",
       "password": "1234",
       "rol": "usuario"
@@ -28,13 +28,224 @@
       "rol": "artista"
     },
     {
+      "id": "4",
       "nombre": "Luis",
       "apellido": "Moncada",
-      "telefono": "1",
+      "telefono": 1,
       "correo": "luism@gmail.com",
       "password": "12345",
+      "rol": "usuario"
+    },
+    {
+      "nombre": "Cristian",
+      "apellido": "Beltran",
+      "telefono": 3204562342,
+      "correo": "cb@gmail.com",
+      "password": "1234",
       "rol": "usuario",
-      "id": "kmagFG4XuP0"
+      "id": "5"
+    },
+    {
+      "nombre": "Manolo",
+      "apellido": "Diaz",
+      "telefono": 12333,
+      "correo": "manolo@gmail.com",
+      "password": "1234",
+      "rol": "usuario",
+      "id": "FS8nMmojoz8"
+    }
+  ],
+  "conversaciones": [
+    {
+      "fecha_creacion": "2026-04-09T08:54:05.299Z",
+      "id": "_Sv8iFMquYE"
+    },
+    {
+      "fecha_creacion": "2026-04-09T09:01:26.882Z",
+      "id": "J_Vun1wsDak"
+    },
+    {
+      "fecha_creacion": "2026-04-09T09:04:46.977Z",
+      "id": "uIWCjFgxo-A"
+    },
+    {
+      "fecha_creacion": "2026-04-09T09:12:41.864Z",
+      "id": "ZZ_xbVYiXkw"
+    },
+    {
+      "fecha_creacion": "2026-04-09T10:00:08.627Z",
+      "id": "TyyTwMKmfQY"
+    }
+  ],
+  "participantes": [
+    {
+      "id_conversacion": "_Sv8iFMquYE",
+      "id_usuario": "4",
+      "nombre_usuario": "Luis",
+      "id": "CKISGVqOuxg"
+    },
+    {
+      "id_conversacion": "_Sv8iFMquYE",
+      "id_usuario": "2",
+      "nombre_usuario": "Pepitoo",
+      "id": "6nyibKxukYM"
+    },
+    {
+      "id_conversacion": "J_Vun1wsDak",
+      "id_usuario": "4",
+      "nombre_usuario": "Luis",
+      "id": "hwpaL2jsHJE"
+    },
+    {
+      "id_conversacion": "J_Vun1wsDak",
+      "id_usuario": "5",
+      "nombre_usuario": "Cristian",
+      "id": "3cCXf-dmVvQ"
+    },
+    {
+      "id_conversacion": "uIWCjFgxo-A",
+      "id_usuario": "4",
+      "nombre_usuario": "Luis",
+      "id": "TljekIDNnt4"
+    },
+    {
+      "id_conversacion": "uIWCjFgxo-A",
+      "id_usuario": "1",
+      "nombre_usuario": "Johan",
+      "id": "cU96Q4vYX-o"
+    },
+    {
+      "id_conversacion": "ZZ_xbVYiXkw",
+      "id_usuario": "FS8nMmojoz8",
+      "nombre_usuario": "Manolo",
+      "id": "VlcjDcV4Y4I"
+    },
+    {
+      "id_conversacion": "ZZ_xbVYiXkw",
+      "id_usuario": "5",
+      "nombre_usuario": "Cristian",
+      "id": "IZOiOulks0U"
+    },
+    {
+      "id_conversacion": "TyyTwMKmfQY",
+      "id_usuario": "3",
+      "nombre_usuario": "Juanito",
+      "id": "Gnsw1r6uCoU"
+    },
+    {
+      "id_conversacion": "TyyTwMKmfQY",
+      "id_usuario": "4",
+      "nombre_usuario": "Luis",
+      "id": "icRP8w1mysI"
+    }
+  ],
+  "mensajes": [
+    {
+      "id_conversacion": "_Sv8iFMquYE",
+      "id_usuario": "2",
+      "contenido": "Holaa",
+      "fecha_envio": "2026-04-09T08:59:44.280Z",
+      "id": "5MDe8wNPtso"
+    },
+    {
+      "id_conversacion": "uIWCjFgxo-A",
+      "id_usuario": "4",
+      "contenido": "Hola Admin",
+      "fecha_envio": "2026-04-09T09:04:57.712Z",
+      "id": "Di3yd7dYBJ8"
+    },
+    {
+      "id_conversacion": "ZZ_xbVYiXkw",
+      "id_usuario": "FS8nMmojoz8",
+      "contenido": "Holaa Compañero como vamos?",
+      "fecha_envio": "2026-04-09T09:12:53.112Z",
+      "id": "p5ge0M48-O8"
+    },
+    {
+      "id_conversacion": "ZZ_xbVYiXkw",
+      "id_usuario": "5",
+      "contenido": "Bieen broo",
+      "fecha_envio": "2026-04-09T09:13:53.156Z",
+      "id": "TIzfHoPmJK0"
+    },
+    {
+      "id_conversacion": "uIWCjFgxo-A",
+      "id_usuario": "1",
+      "contenido": "Hola brooo",
+      "fecha_envio": "2026-04-09T09:53:55.769Z",
+      "id": "efetCwTJikM"
+    },
+    {
+      "id_conversacion": "TyyTwMKmfQY",
+      "id_usuario": "3",
+      "contenido": "Hola",
+      "fecha_envio": "2026-04-09T10:00:14.289Z",
+      "id": "TG6idG1bBDA"
+    }
+  ],
+  "comentarios": [
+    {
+      "Contenido": "Excelente publicación, me pareció muy interesante el tema.",
+      "FechaComentario": "08-04-26",
+      "id_usuario": 2,
+      "id_Publicacion": 5,
+      "id": "1"
+    },
+    {
+      "Contenido": "El brake dance esta infravalorado",
+      "FechaComentario": "01-06-25",
+      "id_usuario": 2,
+      "id_Publicacion": 4,
+      "id": "2"
+    },
+    {
+      "Contenido": "No conocía estos datos, aprendí algo nuevo hoy.",
+      "FechaComentario": "06-01-26",
+      "id_usuario": 2,
+      "id_Publicacion": 6,
+      "id": "3"
+    },
+    {
+      "Contenido": "Me gustó mucho esta publicación, sigue subiendo contenido así.",
+      "FechaComentario": "06-01-26",
+      "id_usuario": 2,
+      "id_Publicacion": 4,
+      "id": "4"
+    },
+    {
+      "Contenido": "Creo que podrías ampliar un poco más el tema en otra publicación.",
+      "FechaComentario": "06-01-26",
+      "id_usuario": 2,
+      "id_Publicacion": 1,
+      "id": "5"
+    },
+    {
+      "Contenido": "Totalmente de acuerdo con lo que mencionas aquí.",
+      "FechaComentario": "06-01-26",
+      "id_usuario": 2,
+      "id_Publicacion": 6,
+      "id": "6"
+    },
+    {
+      "Contenido": "Muy buen aporte a la comunidad, gracias por compartir.",
+      "FechaComentario": "06-01-26",
+      "id_usuario": 2,
+      "id_Publicacion": 5,
+      "id": "7"
+    },
+    {
+      "Contenido": "Interesante punto de vista, no lo había pensado así.",
+      "FechaComentario": "06-01-26",
+      "id_usuario": 2,
+      "id_Publicacion": 1,
+      "id": "8"
+    },
+    {
+      "Contenido": "Buen contenido, sería genial ver más publicaciones similares.",
+      "FechaComentario": "06-01-26",
+      "id_usuario": 2,
+      "id_Publicacion": 5,
+      "id": "9"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
