@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-const API_PUBLICACIONES ='https://69d0711b90cd06523d5d38c4.mockapi.io/ApiAplicaciones';
+const API_PUBLICACIONES ='http://localhost:3002/publicaciones';
 
 function Publicaciones() {
     const [publicaciones, setPublicaciones] = useState([]);
@@ -65,7 +65,7 @@ function Publicaciones() {
                             onClick={() =>
                                 handleEliminar(
                                     API_PUBLICACIONES,
-                                    pub.Id,
+                                    pub.id,
                                     setPublicaciones,
                                     publicaciones,
                                 )

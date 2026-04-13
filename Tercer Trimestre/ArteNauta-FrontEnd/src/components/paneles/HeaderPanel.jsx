@@ -23,10 +23,9 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
     };
 
     const btn = (seccionId) =>
-        `px-4 py-2 rounded font-medium transition ${
-            seccion === seccionId
-                ? 'bg-white text-cyan-700'
-                : 'bg-cyan-600 hover:bg-cyan-900'
+        `px-4 py-2 rounded font-medium transition ${seccion === seccionId
+            ? 'bg-white text-cyan-700'
+            : 'bg-cyan-600 hover:bg-cyan-900'
         }`;
 
     const titulos = {
@@ -38,7 +37,8 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
     return (
         <header className="bg-gradient-to-r from-cyan-900 to-cyan-400 text-white p-4 flex justify-between items-center">
             <div className="flex items-center gap-3">
-                <img src="../src/assets/LOGO.png" alt="Logo" className="h-14" />
+                <img src="../src/assets/LOGO.png" alt="" className="h-14"
+                    onError={(e) => e.target.style.display = 'none'} />
                 <span className="font-bold text-lg">{titulos[rol]}</span>
             </div>
 
@@ -102,7 +102,7 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
 
                 <button
                     onClick={cerrarSesion}
-                    className="px-4 py-2 rounded font-medium transition bg-cyan-600 hover:bg-cyan-900"
+                    className="px-4 py-2 rounded font-medium transition bg-cyan-600 hover:bg-red-800"
                 >
                     Cerrar Sesión
                 </button>

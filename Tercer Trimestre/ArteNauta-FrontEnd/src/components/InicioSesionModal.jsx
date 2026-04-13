@@ -79,7 +79,7 @@ function LoginModal({ isOpen, onClose, setVista }) {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Contraseña
                             </label>
-                            <input type="password" placeholder="Contarseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={password} onChange={(e) => setPassword(e.target.value)} required/>
+                            <input type="password" placeholder="Contraseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={password} onChange={(e) => setPassword(e.target.value)} required/>
                         </div>
                         <p className="text-right text-sm text-cyan-600 my-3 hover:underline cursor-pointer">
                             ¿Olvidaste tu contraseña?

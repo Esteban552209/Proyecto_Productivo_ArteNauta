@@ -115,19 +115,19 @@ function LoginModal({ isOpen, onClose }) {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Email
                         </label>
-                        <input type="email" name="correo" placeholder="Correo Electronico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.correo} onChange={manejarCambio}/>
+                        <input type="email" name="correo" placeholder="Correo Electronico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.correo} onChange={manejarCambio} required/>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Contraseña
                         </label>
-                        <input type="password" name="password" placeholder="Contarseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.password} onChange={manejarCambio}/>
+                        <input type="password" name="password" placeholder="Contraseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.password} onChange={manejarCambio} required/>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Confirmar Contraseña
                         </label>
-                        <input type="password" name="confirmarPassword" placeholder="Vuelve a ingresar tu Contraseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.confirmarPassword} onChange={manejarCambio}/>
+                        <input type="password" name="confirmarPassword" placeholder="Vuelve a ingresar tu Contraseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.confirmarPassword} onChange={manejarCambio} required/>
                     </div>
                     <button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 rounded-lg transition">
                         Confirmar

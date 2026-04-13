@@ -4,7 +4,7 @@ import PublicacionesCom from '../PublicacionesCom';
 import HeaderPanel from './HeaderPanel';
 import Conversaciones from './ModulosConversaciones/VistaChats';
 
-const API_URL = 'https://69d0711b90cd06523d5d38c4.mockapi.io/ApiAplicaciones';
+const API_URL = 'http://localhost:3002/publicaciones';
 
 function PanelUsuario({ setVista }) {
     const usuario = JSON.parse(localStorage.getItem('usuario'));

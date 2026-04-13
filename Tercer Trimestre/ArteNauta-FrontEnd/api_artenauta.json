@@ -4,25 +4,25 @@
       "id": "1",
       "nombre": "Johan",
       "apellido": "Acosta",
-      "telefono": 0,
+      "telefono": "3208344563",
       "correo": "admin@gmail.com",
       "password": "1234",
       "rol": "admin"
     },
     {
       "id": "2",
-      "nombre": "Pepitoo",
+      "nombre": "Pepito",
       "apellido": "Rodriguez",
-      "telefono": 123232,
+      "telefono": "1514",
       "correo": "usuario@gmail.com",
       "password": "1234",
       "rol": "usuario"
     },
     {
       "id": "3",
-      "nombre": "Juanito",
+      "nombre": "JOSE",
       "apellido": "Morales",
-      "telefono": 0,
+      "telefono": "85221",
       "correo": "artista@gmail.com",
       "password": "1234",
       "rol": "artista"
@@ -53,6 +53,15 @@
       "password": "1234",
       "rol": "usuario",
       "id": "FS8nMmojoz8"
+    },
+    {
+      "nombre": "Pepito",
+      "apellido": "Alcachofa",
+      "telefono": 12344556,
+      "correo": "pepito@gmail.com",
+      "password": "123",
+      "rol": "usuario",
+      "id": "lIs5byndGOY"
     }
   ],
   "conversaciones": [
@@ -181,6 +190,72 @@
       "contenido": "Hola",
       "fecha_envio": "2026-04-09T10:00:14.289Z",
       "id": "TG6idG1bBDA"
+    }
+  ],
+  "publicaciones": [
+    {
+      "Titulo": "Kratos",
+      "Descripcion": "Dibujo de Kratos del videojuego God Of War",
+      "ArchivoAdjunto": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQpUGEyLvB3StM7ejvbt5f16s24O0XjAbTd6A&s",
+      "Likes": 0,
+      "id_artista": "3",
+      "id": "8qnjaBB4oro"
+    },
+    {
+      "Titulo": "Dibujito lindo de goku",
+      "Descripcion": "Miren chicos lo que hice",
+      "ArchivoAdjunto": "https://skyryedesign.com/wp-content/uploads/2025/02/Goku-Drawing-9.webp",
+      "Likes": 94,
+      "id_artista": "3",
+      "id": "BL_6ggVqzzY"
+    },
+    {
+      "Titulo": "Lo que siento y hago es mas especial de lo que parece.",
+      "Descripcion": "Comosiones abiertas si deseas un dibujo personalizado :)",
+      "ArchivoAdjunto": "https://media.istockphoto.com/id/2152016164/es/vector/realista-sobre-abstracto-pintura-tradicional-del-retrato-de-la-mascota-del-perro-sobre-un.jpg?s=612x612&w=0&k=20&c=5QXvpxHH59bUlUKW7P_4UitndJz3oaO8zpD1jL_uTyc=",
+      "Likes": 39,
+      "id_artista": "3",
+      "id": "PV_8PRKZHYE"
+    },
+    {
+      "Titulo": "Buenaas miren lo que hice :D",
+      "Descripcion": "Estoy mejorando mis habilidades con las pinturas acrilicas quiero saber sus opiniones",
+      "ArchivoAdjunto": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRt54BsGZvgcKywphFS53u2mvbbykxK0pzWcg&s",
+      "Likes": 43,
+      "id_artista": "3",
+      "id": "_AIYtv1ksfg"
+    },
+    {
+      "Titulo": "Simplemente arte",
+      "Descripcion": "Hay gente tan interesada en el brakeDance como yo????",
+      "ArchivoAdjunto": "https://media2.giphy.com/media/v1.Y2lkPTZjMDliOTUybDAxd2V0M3k3eTRpZTJmNzNmajYybHRwcWI1eHQ2NjBrbzluZ3k4OSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/XaguFkqI9zqla/giphy.gif",
+      "Likes": 5,
+      "id_artista": "3",
+      "id": "nSi7LtUxtp8"
+    },
+    {
+      "Titulo": "Practicando 🙏🙏🙏",
+      "Descripcion": "",
+      "ArchivoAdjunto": "https://i.pinimg.com/736x/1a/4b/2e/1a4b2eebcf3fe3e699e57c9dd9616454.jpg",
+      "Likes": 10,
+      "id_artista": "3",
+      "id": "MZwWYcpPR_k"
+    },
+    {
+      "Titulo": "Dibujo Digital de PeaceMaker",
+      "Descripcion": "Dibujo digital de PeaceMaker",
+      "ArchivoAdjunto": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmyxap5zxweUnBBf5cpPNx8VfbTgLQpfgCbQ&s",
+      "Likes": 0,
+      "id_artista": "3",
+      "id": "vGL7WX9eYUI"
+    },
+    {
+      "Titulo": "Hollow Knight",
+      "Descripcion": "Dibujo del videojuego Hollow Knight - Caballerito",
+      "ArchivoAdjunto": "https://i.pinimg.com/236x/0e/9b/e0/0e9be00f8e3d768dae4c1275120bb4cf.jpg",
+      "Likes": 0,
+      "id_artista": "3",
+      "id": "OjBqvy0qWQs"
     }
   ],
   "comentarios": [

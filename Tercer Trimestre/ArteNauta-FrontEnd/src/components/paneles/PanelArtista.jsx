@@ -1,49 +1,74 @@
-import { useState } from 'react';
-import Swal from 'sweetalert2';
-import PerfilUsuario from './PerfilUsuario';
-import FormPublicaciones from '../FormPublicaciones';
-import HeaderPanel from './HeaderPanel';
-import Conversaciones from './ModulosConversaciones/VistaChats';
+import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
+import PerfilUsuario from "./PerfilUsuario";
+import FormPublicaciones from "../FormPublicaciones";
+import HeaderPanel from "./HeaderPanel";
+import Conversaciones from "./ModulosConversaciones/VistaChats";
 
 function PanelArtista({ setVista }) {
-    const usuario = JSON.parse(localStorage.getItem('usuario'));
-    const [seccion, setSeccion] = useState('inicio');
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const [seccion, setSeccion] = useState("inicio");
     const [showModal, setShowModal] = useState(false);
     const [obras, setObras] = useState([]);
 
+    useEffect(() => {
+        const cargarMisObras = async () => {
+            if (!usuario?.id) return; // Si no hay usuario, no hacemos nada
+
+            try {
+                const res = await fetch('http://localhost:3002/publicaciones');
+                if (!res.ok) throw new Error("Error al obtener las obras");
+                
+                const data = await res.json();
+                
+                // Aquí está la magia: Filtramos para que solo queden las de este artista
+                const misPublicaciones = data.filter(
+                    (obra) => obra.id_artista === usuario.id
+                );
+                
+                setObras(misPublicaciones); // Guardamos solo las filtradas
+            } catch (error) {
+                console.error("Error cargando obras:", error);
+                Swal.fire("Error", "No se pudieron cargar tus obras", "error");
+            }
+        };
+
+        cargarMisObras();
+    }, []);
+
     const handleEliminar = async (id) => {
         const confirmacion = await Swal.fire({
-            title: '¿Eliminar obra?',
-            text: 'Esta acción no se puede deshacer',
-            icon: 'warning',
+            title: "¿Eliminar obra?",
+            text: "Esta acción no se puede deshacer",
+            icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#0891b2',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar',
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#0891b2",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar",
         });
 
         if (!confirmacion.isConfirmed) return;
 
         try {
             const res = await fetch(
-                `https://69d0711b90cd06523d5d38c4.mockapi.io/ApiAplicaciones/${id}`,
-                { method: 'DELETE' },
+                `http://localhost:3002/publicaciones/${id}`,
+                { method: "DELETE" },
             );
 
-            if (!res.ok) throw new Error('No se pudo eliminar');
+            if (!res.ok) throw new Error("No se pudo eliminar");
             setObras((prev) => prev.filter((obra) => obra.Id != id));
 
             Swal.fire({
-                title: 'Eliminada',
-                text: 'Tu publicacion fue eliminada correctamente',
-                icon: 'success',
-                confirmButtonColor: '#0891b2',
+                title: "Eliminada",
+                text: "Tu publicacion fue eliminada correctamente",
+                icon: "success",
+                confirmButtonColor: "#0891b2",
                 timer: 1500,
                 showConfirmButton: false,
             });
         } catch (err) {
-            Swal.fire('Error', err.message, 'error');
+            Swal.fire("Error", err.message, "error");
         }
     };
     const handleNuevaPublicacion = (nueva) => {
@@ -59,7 +84,7 @@ function PanelArtista({ setVista }) {
                 onSubirArte={() => setShowModal(true)}
             />
             <main className="flex-1 p-8 max-w-6xl mx-auto w-full">
-                {seccion === 'inicio' && (
+                {seccion === "inicio" && (
                     <div>
                         <h1 className="text-2xl font-bold text-cyan-800 mb-2">
                             Bienvenido, {usuario?.nombre}
@@ -118,7 +143,7 @@ function PanelArtista({ setVista }) {
                                     </button>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                                     {obras.map((obra) => (
                                         <div
                                             key={obra.id}
@@ -168,16 +193,17 @@ function PanelArtista({ setVista }) {
                 )}
 
                 {seccion === "conversaciones" && (
-                  <Conversaciones usuario={usuario}/>
+                    <Conversaciones usuario={usuario} />
                 )}
 
-                {seccion === 'perfil' && <PerfilUsuario usuario={usuario} />}
+                {seccion === "perfil" && <PerfilUsuario usuario={usuario} />}
             </main>
 
             {showModal && (
                 <FormPublicaciones
                     onNuevaPublicacion={handleNuevaPublicacion}
                     onClose={() => setShowModal(false)}
+                    idArtistaActivo={usuario?.id}
                 />
             )}
         </div>

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 
-const API_URL = 'https://69d0711b90cd06523d5d38c4.mockapi.io/ApiAplicaciones';
+const API_URL = 'http://localhost:3002/publicaciones';
 
-export default function FormPublicaciones({ onNuevaPublicacion, onClose }) {
+export default function FormPublicaciones({ onNuevaPublicacion, onClose, idArtistaActivo }) {
     const [form, setForm] = useState({Titulo: '', Descripcion: '', ArchivoAdjunto: ''});
     const [loading, setLoading] = useState(false);
     const [exito, setExito] = useState(false);
@@ -25,7 +25,11 @@ export default function FormPublicaciones({ onNuevaPublicacion, onClose }) {
             const res = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...form, Likes: 0 }),
+                body: JSON.stringify({ 
+                    ...form, 
+                    Likes: 0, 
+                    id_artista: idArtistaActivo 
+                }),
             });
 
             if (!res.ok) throw new Error('No se pudo publicar');
