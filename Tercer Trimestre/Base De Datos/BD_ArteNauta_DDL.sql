@@ -12,9 +12,9 @@ CREATE TABLE Usuarios (
     apellido VARCHAR(45) NOT NULL,
     email VARCHAR(80) UNIQUE NOT NULL,
     clave VARCHAR(250) NOT NULL,
-    telefono bigint,
+    telefono BIGINT,
     fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP,
-    estado_cuenta BOOLEAN,
+    estado_cuenta BOOLEAN DEFAULT TRUE,
     id_rol int,
 
         
@@ -28,7 +28,7 @@ CREATE TABLE Perfiles (
     id_perfil INT AUTO_INCREMENT PRIMARY KEY,
     foto_perfil VARCHAR(255),
     descripcion VARCHAR(255),
-    ocupacion VARCHAR(40) NOT NULL,
+    ocupacion VARCHAR(40),
     id_usuario int,
     
     
@@ -47,7 +47,7 @@ CREATE TABLE Categorias (
 CREATE TABLE Publicaciones (
     id_publicacion INT AUTO_INCREMENT PRIMARY KEY,
     titulo VARCHAR(45) NOT NULL,
-    contenido VARCHAR(255),
+    contenido VARCHAR(255) NOT NULL,
     descripcion VARCHAR(250) NOT NULL,
     fechaPublicacion DATETIME DEFAULT CURRENT_TIMESTAMP,
     estado BOOLEAN DEFAULT TRUE,
@@ -68,7 +68,7 @@ CREATE TABLE Publicaciones (
 CREATE TABLE Reacciones (
     id_reaccion INT AUTO_INCREMENT PRIMARY KEY,
     fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-    tipo ENUM('Me gusta', 'Me encanta') NOT NULL,
+    tipo ENUM('Me gusta') NOT NULL,
     id_usuario INT,
     id_publicacion INT,
 
@@ -109,18 +109,18 @@ CREATE TABLE Conversaciones (
 
 CREATE TABLE Participantes (
     id_participante INT AUTO_INCREMENT PRIMARY KEY,
-	id_conversacion int,
-    id_usuario int,
+	id_conversacion INT,
+    id_usuario INT,
     
-		foreign key (id_conversacion) 
-        references Conversaciones(id_conversacion)
-        on delete cascade
-		on update cascade,
+		FOREIGN KEY (id_conversacion) 
+        REFERENCES Conversaciones(id_conversacion)
+        ON DELETE CASCADE
+		ON UPDATE CASCADE,
         
-		foreign key (id_usuario) 
-        references Usuarios(id_usuario)
-        on delete cascade
-        on update cascade
+		FOREIGN KEY (id_usuario) 
+        REFERENCES Usuarios(id_usuario)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
 
 CREATE TABLE Solicitudes (
