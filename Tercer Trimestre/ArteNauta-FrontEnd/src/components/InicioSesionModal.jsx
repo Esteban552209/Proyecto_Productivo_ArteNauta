@@ -1,60 +1,66 @@
 import { useState } from "react"
 import Swal from "sweetalert2";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
 
 function LoginModal({ isOpen, onClose, setVista }) {
     const [correo, setCorreo] = useState("");
     const [password, setPassword] = useState("");
     if (!isOpen) return null
 
-    const manejarLogin =  async (e) => {
+    const manejarLogin = async (e) => {
     e.preventDefault();
 
-    try{
-        const respuesta = await fetch("http://localhost:3002/usuarios")
+    try {
+        // Firebase verifica las credenciales
+        await signInWithEmailAndPassword(auth, correo, password);
+
+        // Si Firebase aprueba, buscamos el usuario en json-server
+        const respuesta = await fetch("http://localhost:3002/usuarios");
         const usuarios = await respuesta.json();
 
         const usuarioEncontrado = usuarios.find(
-        (usuario) =>
-        usuario.correo === correo && usuario.password === password
-    );
+            (usuario) => usuario.correo === correo
+        );
 
-    if(usuarioEncontrado){
-        localStorage.setItem("usuario", JSON.stringify(usuarioEncontrado));
-        const token = `jwt-${usuarioEncontrado.rol}--${Date.now()}`;
-        localStorage.setItem("token", token)
-        onClose()
-        setVista(usuarioEncontrado.rol)
+        if (usuarioEncontrado) {
+            localStorage.setItem("usuario", JSON.stringify(usuarioEncontrado));
+            const token = `jwt-${usuarioEncontrado.rol}--${Date.now()}`;
+            localStorage.setItem("token", token);
+            onClose();
+            setVista(usuarioEncontrado.rol);
 
-        Swal.fire({
-            icon: "success",
-            title: "¡Bienvenido de nuevo!",
-            text: "Inicio de sesión exitoso",
-            confirmButtonColor: "#0891b2",
-            background: "#ecfeff", 
-            color: "#164e63",
-            timer: 2000,
-            showConfirmButton: false,
-        })
-    }else{
-        console.log("datos incorrectos")
-        Swal.fire({
-            icon: "error",
-            title: "Ups...",
-            text: "Correo o contraseña incorrectos",
-            confirmButtonColor: "#0891b2",
-            confirmButtonText: "Intentar de nuevo",
-        })
+            Swal.fire({
+                icon: "success",
+                title: "¡Bienvenido de nuevo!",
+                text: "Inicio de sesión exitoso",
+                confirmButtonColor: "#0891b2",
+                background: "#ecfeff",
+                color: "#164e63",
+                timer: 2000,
+                showConfirmButton: false,
+            });
+        }
+    } catch (error) {
+        console.log(error);
+        if (error.code === "auth/invalid-credential") {
+            Swal.fire({
+                icon: "error",
+                title: "Ups...",
+                text: "Correo o contraseña incorrectos",
+                confirmButtonColor: "#0891b2",
+                confirmButtonText: "Intentar de nuevo",
+            });
+        } else {
+            Swal.fire({
+                icon: "error",
+                title: "Error de conexión",
+                text: "No es posible conectarse al servidor",
+                confirmButtonColor: "#0891b2",
+            });
+        }
     }
-    }catch(error){
-        console.log(error)
-        Swal.fire({
-            icon: "error",                        
-            title: "Error de conexión",
-            text: "No es posible conectarse al servidor",
-            confirmButtonColor: "#0891b2",
-        })
-    }
-}
+};
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={onClose}>
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 relative animate-fadeIn" onClick={(e) => e.stopPropagation()}>
@@ -79,7 +85,7 @@ function LoginModal({ isOpen, onClose, setVista }) {
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Contraseña
                             </label>
-                            <input type="password" placeholder="Contarseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={password} onChange={(e) => setPassword(e.target.value)} required/>
+                            <input type="password" placeholder="Contraseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={password} onChange={(e) => setPassword(e.target.value)} required/>
                         </div>
                         <p className="text-right text-sm text-cyan-600 my-3 hover:underline cursor-pointer">
                             ¿Olvidaste tu contraseña?

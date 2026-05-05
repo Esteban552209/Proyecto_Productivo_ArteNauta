@@ -1,5 +1,7 @@
 import { useState } from "react"
 import Swal from "sweetalert2"
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
 
 function LoginModal({ isOpen, onClose }) {
     const [formulario, setFormulario] = useState({
@@ -21,56 +23,75 @@ function LoginModal({ isOpen, onClose }) {
     }
 
     const manejarRegistro = async (e) => {
-        e.preventDefault()
+    e.preventDefault()
 
-        if (formulario.password !== formulario.confirmarPassword) {
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: "Las contraseñas no coinciden",
-                confirmButtonColor: "#0891b2",
-            })
-            return
-        }
+    if (formulario.password !== formulario.confirmarPassword) {
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Las contraseñas no coinciden",
+            confirmButtonColor: "#0891b2",
+        })
+        return
+    }
 
+    try {
+        // Primero crea el usuario en Firebase
+        await createUserWithEmailAndPassword(auth, formulario.correo, formulario.password)
+
+        // Luego guarda los datos en json-server
         const nuevoUsuario = {
             nombre: formulario.nombre,
             apellido: formulario.apellido,
-            telefono: formulario.telefono,
+            telefono: Number(formulario.telefono),
             correo: formulario.correo,
             password: formulario.password,
             rol: "usuario"
         }
 
-        try {
-            const respuesta = await fetch("http://localhost:3002/usuarios", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(nuevoUsuario)
+        const respuesta = await fetch("http://localhost:3002/usuarios", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(nuevoUsuario)
+        })
+
+        if (respuesta.ok) {
+            setFormulario({
+                nombre: "",
+                apellido: "",
+                telefono: "",
+                correo: "",
+                password: "",
+                confirmarPassword: ""
             })
 
-            if (respuesta.ok) {
-                setFormulario({
-                    nombre: "",
-                    apellido: "",
-                    telefono: "",
-                    correo: "",
-                    password: "",
-                    confirmarPassword: ""
-                })
-
-                Swal.fire({
-                    icon: "success",
-                    title: "¡Registro exitoso!",
-                    text: "Ya puedes iniciar sesión",
-                    confirmButtonColor: "#0891b2",
-                    timer: 1500,
-                    showConfirmButton: false,
-                })
-                onClose()
-            }
-        } catch (error) {
-            console.log(error)
+            Swal.fire({
+                icon: "success",
+                title: "¡Registro exitoso!",
+                text: "Ya puedes iniciar sesión",
+                confirmButtonColor: "#0891b2",
+                timer: 1500,
+                showConfirmButton: false,
+            })
+            onClose()
+        }
+    } catch (error) {
+        console.log(error)
+        if (error.code === "auth/email-already-in-use") {
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Este correo ya está registrado",
+                confirmButtonColor: "#0891b2",
+            })
+        } else if (error.code === "auth/weak-password") {
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "La contraseña debe tener mínimo 6 caracteres",
+                confirmButtonColor: "#0891b2",
+            })
+        } else {
             Swal.fire({
                 icon: "error",
                 title: "Error de conexión",
@@ -79,6 +100,7 @@ function LoginModal({ isOpen, onClose }) {
             })
         }
     }
+}
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={onClose}>
@@ -109,25 +131,25 @@ function LoginModal({ isOpen, onClose }) {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Telefono
                         </label>
-                        <input type="text" name="telefono" placeholder="Numero telefonico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.telefono} onChange={manejarCambio} required/>
+                        <input type="number" name="telefono" placeholder="Numero telefonico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" value={formulario.telefono} onChange={manejarCambio} required/>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Email
                         </label>
-                        <input type="email" name="correo" placeholder="Correo Electronico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.correo} onChange={manejarCambio}/>
+                        <input type="email" name="correo" placeholder="Correo Electronico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.correo} onChange={manejarCambio} required/>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Contraseña
                         </label>
-                        <input type="password" name="password" placeholder="Contarseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.password} onChange={manejarCambio}/>
+                        <input type="password" name="password" placeholder="Contraseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.password} onChange={manejarCambio} required/>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Confirmar Contraseña
                         </label>
-                        <input type="password" name="confirmarPassword" placeholder="Vuelve a ingresar tu Contraseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.confirmarPassword} onChange={manejarCambio}/>
+                        <input type="password" name="confirmarPassword" placeholder="Vuelve a ingresar tu Contraseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.confirmarPassword} onChange={manejarCambio} required/>
                     </div>
                     <button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 rounded-lg transition">
                         Confirmar
