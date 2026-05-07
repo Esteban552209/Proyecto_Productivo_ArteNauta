@@ -3,7 +3,10 @@ import PerfilUsuario from './PerfilUsuario';
 import PublicacionesCom from '../PublicacionesCom';
 import HeaderPanel from './HeaderPanel';
 import Conversaciones from './ModulosConversaciones/VistaChats';
+<<<<<<< HEAD
 import Notificaciones from './Notificaciones';
+=======
+>>>>>>> master
 
 const API_URL = 'http://localhost:3002/publicaciones';
 

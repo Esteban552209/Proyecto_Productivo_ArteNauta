@@ -4,16 +4,24 @@
       "id": "1",
       "nombre": "Johan",
       "apellido": "Acosta",
+<<<<<<< HEAD
       "telefono": "3208344563",
+=======
+      "telefono": 3208344563,
+>>>>>>> master
       "correo": "admin@gmail.com",
       "password": "1234",
       "rol": "admin"
     },
     {
       "id": "2",
-      "nombre": "Pepito",
+      "nombre": "Julian",
       "apellido": "Rodriguez",
+<<<<<<< HEAD
       "telefono": "1514",
+=======
+      "telefono": 1514,
+>>>>>>> master
       "correo": "usuario@gmail.com",
       "password": "1234",
       "rol": "usuario"
@@ -22,7 +30,11 @@
       "id": "3",
       "nombre": "JOSE",
       "apellido": "Morales",
+<<<<<<< HEAD
       "telefono": "85221",
+=======
+      "telefono": 85221,
+>>>>>>> master
       "correo": "artista@gmail.com",
       "password": "1234",
       "rol": "artista"
@@ -62,6 +74,18 @@
       "password": "123",
       "rol": "usuario",
       "id": "lIs5byndGOY"
+<<<<<<< HEAD
+=======
+    },
+    {
+      "nombre": "Jorge",
+      "apellido": "Herrera",
+      "telefono": 3013822685,
+      "correo": "elp@gmail.com",
+      "password": "1234",
+      "rol": "usuario",
+      "id": "Ct8U_wPag9Q"
+>>>>>>> master
     }
   ],
   "conversaciones": [
@@ -86,8 +110,13 @@
       "id": "TyyTwMKmfQY"
     },
     {
+<<<<<<< HEAD
       "fecha_creacion": "2026-04-26T20:34:25.777Z",
       "id": "RXu1GxxS4Dg"
+=======
+      "fecha_creacion": "2026-04-13T13:01:59.851Z",
+      "id": "O7yRpTYS3XY"
+>>>>>>> master
     }
   ],
   "participantes": [
@@ -152,6 +181,7 @@
       "id": "icRP8w1mysI"
     },
     {
+<<<<<<< HEAD
       "id_conversacion": "RXu1GxxS4Dg",
       "id_usuario": "1",
       "nombre_usuario": "Johan",
@@ -162,6 +192,18 @@
       "id_usuario": "3",
       "nombre_usuario": "JOSE",
       "id": "Aa4EugN234c"
+=======
+      "id_conversacion": "O7yRpTYS3XY",
+      "id_usuario": "2",
+      "nombre_usuario": "Pepito",
+      "id": "wMcK_fXCRmw"
+    },
+    {
+      "id_conversacion": "O7yRpTYS3XY",
+      "id_usuario": "3",
+      "nombre_usuario": "JOSE",
+      "id": "VbvazmtSSw0"
+>>>>>>> master
     }
   ],
   "mensajes": [
@@ -208,11 +250,19 @@
       "id": "TG6idG1bBDA"
     },
     {
+<<<<<<< HEAD
       "id_conversacion": "RXu1GxxS4Dg",
       "id_usuario": "1",
       "contenido": "hola jose",
       "fecha_envio": "2026-04-26T20:34:31.301Z",
       "id": "HwZM8YF6uME"
+=======
+      "id_conversacion": "O7yRpTYS3XY",
+      "id_usuario": "2",
+      "contenido": "hola buen dia como estas",
+      "fecha_envio": "2026-04-13T13:02:13.111Z",
+      "id": "5sKfIFfMSTI"
+>>>>>>> master
     }
   ],
   "publicaciones": [
@@ -344,6 +394,7 @@
       "id_usuario": 2,
       "id_Publicacion": 5,
       "id": "9"
+<<<<<<< HEAD
     }
   ],
   "notificaciones": [
@@ -423,6 +474,8 @@
       "leida": false,
       "fecha": "2026-04-26T21:52:45.101Z",
       "id": "US7l3D9JPFY"
+=======
+>>>>>>> master
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 
@@ -32,6 +33,13 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
             })
             .catch(() => setNoLeidas(0));
     };
+=======
+import Swal from 'sweetalert2';
+
+function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
+    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    const rol = usuario?.rol;
+>>>>>>> master
 
     const cerrarSesion = () => {
         Swal.fire({
@@ -66,6 +74,7 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
     return (
         <header className="bg-gradient-to-r from-cyan-900 to-cyan-400 text-white p-4 flex justify-between items-center">
             <div className="flex items-center gap-3">
+<<<<<<< HEAD
                 <img
                     src="../src/assets/LOGO.png"
                     alt=""
@@ -95,6 +104,18 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
 
             <nav className="flex gap-2 items-center">
                 <button onClick={() => setSeccion('inicio')} className={btn('inicio')}>
+=======
+                <img src="../src/assets/LOGO.png" alt="" className="h-14"
+                    onError={(e) => e.target.style.display = 'none'} />
+                <span className="font-bold text-lg">{titulos[rol]}</span>
+            </div>
+
+            <nav className="flex gap-2">
+                <button
+                    onClick={() => setSeccion('inicio')}
+                    className={btn('inicio')}
+                >
+>>>>>>> master
                     Inicio
                 </button>
 
@@ -108,6 +129,7 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
                 )}
 
                 {rol === 'admin' && (
+<<<<<<< HEAD
                     <>
                         <button onClick={() => setSeccion('usuarios')} className={btn('usuarios')}>
                             Usuarios
@@ -134,6 +156,45 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
                 <div className="w-px h-6 bg-white opacity-30 mx-1"></div>
 
                 <button onClick={() => setSeccion('perfil')} className={btn('perfil')}>
+=======
+                    <button
+                        onClick={() => setSeccion('usuarios')}
+                        className={btn('usuarios')}
+                    >
+                        Usuarios
+                    </button>
+                )}
+
+                {rol === 'admin' && (
+                    <button
+                        onClick={() => setSeccion('publicaciones')}
+                        className={btn('publicaciones')}
+                    >
+                        Publicaciones
+                    </button>
+                )}
+
+                {rol === 'admin' && (
+                    <button
+                        onClick={() => setSeccion('comentarios')}
+                        className={btn('comentarios')}
+                    >
+                        Comentarios
+                    </button>
+                )}
+
+                <button
+                    onClick={() => setSeccion('conversaciones')}
+                    className={btn('conversaciones')}
+                >
+                    Conversaciones
+                </button>
+
+                <button
+                    onClick={() => setSeccion('perfil')}
+                    className={btn('perfil')}
+                >
+>>>>>>> master
                     Mi Perfil
                 </button>
 
@@ -148,4 +209,8 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
     );
 }
 
+<<<<<<< HEAD
 export default HeaderPanel;
+=======
+export default HeaderPanel;
+>>>>>>> master
