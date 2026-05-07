@@ -4,10 +4,6 @@ import PerfilUsuario from "./PerfilUsuario";
 import FormPublicaciones from "../FormPublicaciones";
 import HeaderPanel from "./HeaderPanel";
 import Conversaciones from "./ModulosConversaciones/VistaChats";
-<<<<<<< HEAD
-import Notificaciones from './Notificaciones';
-=======
->>>>>>> master
 
 function PanelArtista({ setVista }) {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
@@ -87,10 +83,6 @@ function PanelArtista({ setVista }) {
                 setVista={setVista}
                 onSubirArte={() => setShowModal(true)}
             />
-<<<<<<< HEAD
-            {seccion === 'notificaciones' && <Notificaciones usuario={usuario} />}
-=======
->>>>>>> master
             <main className="flex-1 p-8 max-w-6xl mx-auto w-full">
                 {seccion === "inicio" && (
                     <div>

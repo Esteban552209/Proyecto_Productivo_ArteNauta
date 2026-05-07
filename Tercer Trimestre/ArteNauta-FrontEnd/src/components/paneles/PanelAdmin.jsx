@@ -6,10 +6,6 @@ import Usuarios from "./ModulosAdmin/Usuarios";
 import Estadisticas from "./ModulosAdmin/Estadisticas";
 import Publicaciones from "./ModulosAdmin/Publicaciones";
 import Comentarios from "./ModulosAdmin/Comentarios";
-<<<<<<< HEAD
-import Notificaciones from './Notificaciones';
-=======
->>>>>>> master
 
 function PanelAdmin({ setVista }) {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
@@ -48,10 +44,6 @@ function PanelAdmin({ setVista }) {
                 )}
 
                 {seccion === "perfil" && <PerfilUsuario usuario={usuario} />}
-<<<<<<< HEAD
-                {seccion === 'notificaciones' && <Notificaciones usuario={usuario} />}
-=======
->>>>>>> master
             </main>
         </div>
     );

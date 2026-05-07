@@ -1,9 +1,5 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
-<<<<<<< HEAD
-import SolicitarArtista from './SolicitarArtista';
-=======
->>>>>>> master
 
 function PerfilUsuario({ usuario, setSeccion }) {
     // Estado local para mostrar datos actualizados al instante
@@ -205,11 +201,6 @@ function PerfilUsuario({ usuario, setSeccion }) {
                     )}
                 </div>
             </div>
-<<<<<<< HEAD
-                
-                <SolicitarArtista usuario={datosActuales} />
-=======
->>>>>>> master
 
             {/* Botón volver */}
             {setSeccion && (
