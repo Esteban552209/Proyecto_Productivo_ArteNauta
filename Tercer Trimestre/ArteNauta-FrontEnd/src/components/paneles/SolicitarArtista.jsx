@@ -1,8 +1,6 @@
 import Swal from 'sweetalert2';
+import { supabase } from '../lib/supabase';
 
-const API = 'http://localhost:3002';
-
-// Componente botón para que un usuario solicite ser artista
 function SolicitarArtista({ usuario }) {
     const handleSolicitar = async () => {
         const confirm = await Swal.fire({
@@ -19,13 +17,14 @@ function SolicitarArtista({ usuario }) {
         if (!confirm.isConfirmed) return;
 
         try {
-            // Verificar si ya tiene una solicitud pendiente
-            const res = await fetch(
-                `${API}/notificaciones?id_remitente=${usuario.id}&tipo=solicitud_artista&estado=pendiente`
-            );
-            const existentes = await res.json();
+            // Verificar si ya tiene solicitud pendiente
+            const { data: existentes } = await supabase
+                .from('solicitudes')
+                .select('*')
+                .eq('id_usuario', usuario?.id_usuario)
+                .eq('estado_solicitud', 'pendiente');
 
-            if (existentes.length > 0) {
+            if (existentes && existentes.length > 0) {
                 Swal.fire({
                     icon: 'info',
                     title: 'Ya tienes una solicitud pendiente',
@@ -35,26 +34,15 @@ function SolicitarArtista({ usuario }) {
                 return;
             }
 
-            // Obtener el admin para enviarle la notificación
-            const resAdmin = await fetch(`${API}/usuarios?rol=admin`);
-            const admins = await resAdmin.json();
-            const admin = admins[0];
-
-            // Crear la notificación para el admin
-            await fetch(`${API}/notificaciones`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    tipo: 'solicitud_artista',
-                    mensaje: `El usuario ${usuario.nombre} ${usuario.apellido} solicita ser artista`,
-                    id_remitente: usuario.id,
-                    id_destinatario: admin?.id || '1',
-                    rol_destinatario: 'admin',
-                    estado: 'pendiente',
-                    leida: false,
-                    fecha: new Date().toISOString(),
-                }),
-            });
+            // Crear la solicitud
+            await supabase
+                .from('solicitudes')
+                .insert({
+                    id_usuario: usuario?.id_usuario,
+                    fecha_solicitud: new Date().toISOString(),
+                    tipo_solicitud: 'artista',
+                    estado_solicitud: 'pendiente',
+                });
 
             Swal.fire({
                 icon: 'success',
@@ -64,13 +52,13 @@ function SolicitarArtista({ usuario }) {
                 timer: 2500,
                 showConfirmButton: false,
             });
-        } catch {
+        } catch (error) {
+            console.log(error);
             Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo enviar la solicitud.', confirmButtonColor: '#0891b2' });
         }
     };
 
-    // Solo mostrar si el usuario NO es artista ni admin
-    if (usuario?.rol !== 'usuario') return null;
+    if (usuario?.id_rol !== 1) return null; // 3 = usuario normal
 
     return (
         <button
