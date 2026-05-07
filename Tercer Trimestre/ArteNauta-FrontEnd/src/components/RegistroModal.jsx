@@ -1,13 +1,6 @@
-<<<<<<< HEAD
-import { useState } from "react"
-import Swal from "sweetalert2"
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase";
-=======
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 import Swal from "sweetalert2";
->>>>>>> master
 
 function LoginModal({ isOpen, onClose }) {
     const [formulario, setFormulario] = useState({
@@ -28,87 +21,6 @@ function LoginModal({ isOpen, onClose }) {
         });
     };
 
-<<<<<<< HEAD
-    const manejarRegistro = async (e) => {
-    e.preventDefault()
-
-    if (formulario.password !== formulario.confirmarPassword) {
-        Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: "Las contraseñas no coinciden",
-            confirmButtonColor: "#0891b2",
-        })
-        return
-    }
-
-    try {
-        // Primero crea el usuario en Firebase
-        await createUserWithEmailAndPassword(auth, formulario.correo, formulario.password)
-
-        // Luego guarda los datos en json-server
-        const nuevoUsuario = {
-            nombre: formulario.nombre,
-            apellido: formulario.apellido,
-            telefono: Number(formulario.telefono),
-            correo: formulario.correo,
-            password: formulario.password,
-            rol: "usuario"
-        }
-
-        const respuesta = await fetch("http://localhost:3002/usuarios", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(nuevoUsuario)
-        })
-
-        if (respuesta.ok) {
-            setFormulario({
-                nombre: "",
-                apellido: "",
-                telefono: "",
-                correo: "",
-                password: "",
-                confirmarPassword: ""
-            })
-
-            Swal.fire({
-                icon: "success",
-                title: "¡Registro exitoso!",
-                text: "Ya puedes iniciar sesión",
-                confirmButtonColor: "#0891b2",
-                timer: 1500,
-                showConfirmButton: false,
-            })
-            onClose()
-        }
-    } catch (error) {
-        console.log(error)
-        if (error.code === "auth/email-already-in-use") {
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: "Este correo ya está registrado",
-                confirmButtonColor: "#0891b2",
-            })
-        } else if (error.code === "auth/weak-password") {
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: "La contraseña debe tener mínimo 6 caracteres",
-                confirmButtonColor: "#0891b2",
-            })
-        } else {
-            Swal.fire({
-                icon: "error",
-                title: "Error de conexión",
-                text: "No es posible conectarse al servidor",
-                confirmButtonColor: "#0891b2",
-            })
-        }
-    }
-}
-=======
         const manejarRegistro = async (e) => {
             e.preventDefault();
 
@@ -172,7 +84,6 @@ function LoginModal({ isOpen, onClose }) {
                 });
             }
         };
->>>>>>> master
 
     return (
         <div
@@ -232,9 +143,6 @@ function LoginModal({ isOpen, onClose }) {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Telefono
                         </label>
-<<<<<<< HEAD
-                        <input type="number" name="telefono" placeholder="Numero telefonico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" value={formulario.telefono} onChange={manejarCambio} required/>
-=======
                         <input
                             type="number"
                             name="telefono"
@@ -244,15 +152,11 @@ function LoginModal({ isOpen, onClose }) {
                             onChange={manejarCambio}
                             required
                         />
->>>>>>> master
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Email
                         </label>
-<<<<<<< HEAD
-                        <input type="email" name="correo" placeholder="Correo Electronico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.correo} onChange={manejarCambio} required/>
-=======
                         <input
                             type="email"
                             name="correo"
@@ -262,15 +166,11 @@ function LoginModal({ isOpen, onClose }) {
                             onChange={manejarCambio}
                             required
                         />
->>>>>>> master
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Contraseña
                         </label>
-<<<<<<< HEAD
-                        <input type="password" name="password" placeholder="Contraseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.password} onChange={manejarCambio} required/>
-=======
                         <input
                             type="password"
                             name="password"
@@ -280,15 +180,11 @@ function LoginModal({ isOpen, onClose }) {
                             onChange={manejarCambio}
                             required
                         />
->>>>>>> master
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Confirmar Contraseña
                         </label>
-<<<<<<< HEAD
-                        <input type="password" name="confirmarPassword" placeholder="Vuelve a ingresar tu Contraseña" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={formulario.confirmarPassword} onChange={manejarCambio} required/>
-=======
                         <input
                             type="password"
                             name="confirmarPassword"
@@ -298,7 +194,6 @@ function LoginModal({ isOpen, onClose }) {
                             onChange={manejarCambio}
                             required
                         />
->>>>>>> master
                     </div>
                     <button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 rounded-lg transition">
                         Confirmar
