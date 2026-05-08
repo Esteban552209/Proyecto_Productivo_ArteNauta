@@ -19,21 +19,16 @@ function App() {
 
         try {
             const usuario = JSON.parse(usuarioGuardado);
-
-            if (usuario.rol === "admin") return "admin";
-            if (usuario.rol === "artista") return "artista";
-            if (usuario.rol === "usuario") return "usuario";
-
-            return null;
+            return usuario.id_rol;
         } catch (error) {
             console.log(error);
             return null;
         }
     });
 
-    if (vista === "admin") return <PanelAdmin setVista={setVista} />;
-    if (vista === "artista") return <PanelArtista setVista={setVista} />;
-    if (vista === "usuario") return <PanelUsuario setVista={setVista} />;
+    if (vista === 3) return <PanelAdmin setVista={setVista} />;
+    if (vista === 2) return <PanelArtista setVista={setVista} />;
+    if (vista === 1) return <PanelUsuario setVista={setVista} />;
 
     return (
         <div className="flex flex-col min-h-screen">
