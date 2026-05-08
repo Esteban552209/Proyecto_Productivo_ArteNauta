@@ -43,16 +43,15 @@ function LoginModal({ isOpen, onClose }) {
                         {
                             nombre: formulario.nombre,
                             apellido: formulario.apellido,
-                            telefono: formulario.telefono, // Supabase manejará la conversión si es necesario
-                            email: formulario.correo, // Asegúrate de que en BD se llame 'email'
-                            clave: formulario.password, // Asegúrate de que en BD se llame 'clave'
-                            id_rol: 1, // Rol predeterminado (Usuario Final)
+                            telefono: formulario.telefono,
+                            email: formulario.correo, 
+                            clave: formulario.password,
+                            id_rol: 1, 
                         },
                     ]);
 
-                if (error) throw error; // Si hay un error de Supabase, lo lanzamos al catch
+                if (error) throw error; 
 
-                // Si todo sale bien, limpiamos y cerramos
                 setFormulario({
                     nombre: "",
                     apellido: "",
