@@ -3,7 +3,6 @@ import { supabase } from "../lib/supabase"
 import Swal from "sweetalert2";
 
 function LoginModal({ isOpen, onClose, setVista }) {
-    
     const [correo, setCorreo] = useState("");
     const [password, setPassword] = useState("");
     if (!isOpen) return null
@@ -12,8 +11,6 @@ function LoginModal({ isOpen, onClose, setVista }) {
         e.preventDefault();
 
         try {
-            // TRADUCCIÓN: Le pedimos a Supabase que busque un registro donde email y clave coincidan.
-            // .maybeSingle() funciona igual que tu .find(): devuelve el dato si existe, o null si no.
             const { data: usuarioEncontrado, error } = await supabase
                 .from("usuarios")
                 .select("*")
@@ -21,20 +18,14 @@ function LoginModal({ isOpen, onClose, setVista }) {
                 .eq("clave", password)
                 .maybeSingle();
 
-            // Si hay un error de conexión con Supabase, lo enviamos al catch
             if (error) throw error;
             
-            // Si encontró al usuario, ejecuta tu lógica original
             if (usuarioEncontrado) {
                 localStorage.setItem("usuario", JSON.stringify(usuarioEncontrado));
-
-                // OJO AQUÍ: Según tu base de datos, la columna se llama 'id_rol', no 'rol'.
                 const token = `jwt-${usuarioEncontrado.id_rol}--${Date.now()}`;
                 localStorage.setItem("token", token);
-
                 onClose();
                 setVista(usuarioEncontrado.id_rol); // Cambiado a id_rol
-
                 Swal.fire({
                     icon: "success",
                     title: "¡Bienvenido de nuevo!",
@@ -46,7 +37,6 @@ function LoginModal({ isOpen, onClose, setVista }) {
                     showConfirmButton: false,
                 });
             } else {
-                // Si usuarioEncontrado es null (datos incorrectos)
                 console.log("datos incorrectos");
                 Swal.fire({
                     icon: "error",
