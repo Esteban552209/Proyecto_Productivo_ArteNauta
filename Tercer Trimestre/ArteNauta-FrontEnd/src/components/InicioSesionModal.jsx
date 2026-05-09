@@ -11,21 +11,37 @@ function LoginModal({ isOpen, onClose, setVista }) {
         e.preventDefault();
 
         try {
-            const { data: usuarioEncontrado, error } = await supabase
-                .from("usuarios")
-                .select("*")
-                .eq("email", correo)
-                .eq("clave", password)
-                .maybeSingle();
+            // 1. Inicio de sesión nativo de Supabase Auth
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email: correo,
+                password: password,
+            });
 
-            if (error) throw error;
-            
-            if (usuarioEncontrado) {
-                localStorage.setItem("usuario", JSON.stringify(usuarioEncontrado));
-                const token = `jwt-${usuarioEncontrado.id_rol}--${Date.now()}`;
-                localStorage.setItem("token", token);
+            if (authError) throw authError;
+
+            // 2. Obtener el perfil real de la nueva tabla profiles
+            const { data: profile, error: profileError } = await supabase
+                .from("profiles")
+                .select("*")
+                .eq("id", authData.user.id)
+                .single();
+
+            if (profileError) throw profileError;
+
+            if (profile) {
+                // Mapear rol a id_rol (para mantener compatibilidad con tu código antiguo)
+                let mappedRol = 1;
+                if (profile.role === 'artista') mappedRol = 2;
+                if (profile.role === 'administrador') mappedRol = 3;
+
+                // Mantener localStorage para no romper PanelAdmin.jsx
+                const legacyUser = { nombre: profile.username, id_rol: mappedRol, id_usuario: profile.id };
+                localStorage.setItem("usuario", JSON.stringify(legacyUser));
+                localStorage.setItem("token", authData.session.access_token);
+                
                 onClose();
-                setVista(usuarioEncontrado.id_rol); // Cambiado a id_rol
+                setVista(mappedRol);
+
                 Swal.fire({
                     icon: "success",
                     title: "¡Bienvenido de nuevo!",
@@ -36,23 +52,15 @@ function LoginModal({ isOpen, onClose, setVista }) {
                     timer: 2000,
                     showConfirmButton: false,
                 });
-            } else {
-                console.log("datos incorrectos");
-                Swal.fire({
-                    icon: "error",
-                    title: "Ups...",
-                    text: "Correo o contraseña incorrectos",
-                    confirmButtonColor: "#0891b2",
-                    confirmButtonText: "Intentar de nuevo",
-                });
             }
         } catch (error) {
-            console.log(error);
+            console.error(error);
             Swal.fire({
                 icon: "error",
-                title: "Error de conexión",
-                text: "No es posible conectarse al servidor",
+                title: "Error al iniciar sesión",
+                text: "Correo o contraseña incorrectos",
                 confirmButtonColor: "#0891b2",
+                confirmButtonText: "Intentar de nuevo",
             });
         }
     }

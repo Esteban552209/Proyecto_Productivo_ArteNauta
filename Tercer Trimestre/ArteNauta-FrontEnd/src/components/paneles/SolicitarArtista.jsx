@@ -1,71 +1,97 @@
-import Swal from 'sweetalert2';
-import { supabase } from '../lib/supabase';
+import React, { useEffect, useState } from "react";
+import supabase from "../../supabaseClient";
+import { useAuth } from "../../context/AuthContext";
+import Swal from "sweetalert2";
 
-function SolicitarArtista({ usuario }) {
-    const handleSolicitar = async () => {
-        const confirm = await Swal.fire({
-            title: '¿Solicitar ser artista?',
-            text: 'Se enviará una solicitud al administrador para cambiar tu rol.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#0891b2',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Sí, solicitar',
-            cancelButtonText: 'Cancelar',
-        });
+function SolicitarArtista() {
+    const { currentUser, role } = useAuth();
+    const [requestStatus, setRequestStatus] = useState(null); // 'pending', 'accepted', 'rejected', or null
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-        if (!confirm.isConfirmed) return;
+    useEffect(() => {
+        if (!currentUser?.id) {
+            setIsLoading(false);
+            return;
+        }
 
-        try {
-            // Verificar si ya tiene solicitud pendiente
-            const { data: existentes } = await supabase
-                .from('solicitudes')
-                .select('*')
-                .eq('id_usuario', usuario?.id_usuario)
-                .eq('estado_solicitud', 'pendiente');
+        const fetchRequestStatus = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from("artist_requests")
+                    .select("status")
+                    .eq("user_id", currentUser.id)
+                    .order("created_at", { ascending: false })
+                    .limit(1)
+                    .single();
 
-            if (existentes && existentes.length > 0) {
-                Swal.fire({
-                    icon: 'info',
-                    title: 'Ya tienes una solicitud pendiente',
-                    text: 'El administrador aún no ha respondido.',
-                    confirmButtonColor: '#0891b2',
-                });
-                return;
+                if (error && error.code !== "PGRST116") {
+                    // PGRST116 means zero rows returned, which is fine
+                    console.error("Error fetching request status:", error);
+                } else if (data) {
+                    setRequestStatus(data.status);
+                }
+            } catch (err) {
+                console.error("Unexpected error:", err);
+            } finally {
+                setIsLoading(false);
             }
+        };
 
-            // Crear la solicitud
-            await supabase
-                .from('solicitudes')
-                .insert({
-                    id_usuario: usuario?.id_usuario,
-                    fecha_solicitud: new Date().toISOString(),
-                    tipo_solicitud: 'artista',
-                    estado_solicitud: 'pendiente',
-                });
+        fetchRequestStatus();
+    }, [currentUser?.id]);
 
+    const handleSolicitar = async () => {
+        setIsSubmitting(true);
+
+        const { error } = await supabase
+            .from("artist_requests")
+            .insert({ user_id: currentUser.id, status: "pending" });
+
+        if (error) {
+            console.error("Error inserting request:", error);
             Swal.fire({
-                icon: 'success',
-                title: '¡Solicitud enviada!',
-                text: 'El administrador revisará tu solicitud pronto.',
-                confirmButtonColor: '#0891b2',
+                icon: "error",
+                title: "Error",
+                text: "No se pudo enviar la solicitud. Intenta nuevamente.",
+                confirmButtonColor: "#0891b2",
+            });
+            setIsSubmitting(false);
+        } else {
+            setRequestStatus("pending");
+            Swal.fire({
+                icon: "success",
+                title: "Tu solicitud fue enviada exitosamente ✅",
+                text: "El administrador revisará tu perfil.",
+                confirmButtonColor: "#0891b2",
                 timer: 2500,
                 showConfirmButton: false,
             });
-        } catch (error) {
-            console.log(error);
-            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo enviar la solicitud.', confirmButtonColor: '#0891b2' });
+            setIsSubmitting(false);
         }
     };
 
-    if (usuario?.id_rol !== 1) return null; // 3 = usuario normal
+    if (role !== "usuario") return null;
+    if (isLoading) return <div className="text-sm text-gray-500 mt-4 text-center">Cargando estado...</div>;
+    if (requestStatus === "accepted") return null;
+
+    const isPending = requestStatus === "pending";
 
     return (
         <button
             onClick={handleSolicitar}
-            className="w-full mt-4 border-2 border-dashed border-cyan-300 hover:border-cyan-500 text-cyan-600 hover:text-cyan-700 py-3 rounded-xl font-semibold transition text-sm"
+            disabled={isPending || isSubmitting}
+            className={`w-full mt-4 border-2 border-dashed py-3 rounded-xl font-semibold transition text-sm ${
+                isPending || isSubmitting
+                    ? "border-gray-300 text-gray-400 cursor-not-allowed"
+                    : "border-cyan-300 hover:border-cyan-500 text-cyan-600 hover:text-cyan-700"
+            }`}
         >
-            Solicitar ser Artista
+            {isSubmitting
+                ? "Procesando..."
+                : isPending
+                ? "Solicitud en revisión..."
+                : "Solicitar ser artista"}
         </button>
     );
 }

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import InicioSesionModal from '../components/InicioSesionModal'
 import RegistroModal from "../components/RegistroModal"
+import NotificationBell from "./NotificationBell"
 
 function Header({setPagina, setVista}){
     const [showLogin, setShowLogin] = useState(false)
@@ -10,13 +11,16 @@ function Header({setPagina, setVista}){
             <div>    
                 <img src="../src/assets/LOGO.png" alt="Logo" className="h-20" />
             </div>
-            <nav>
-                <ul>
+            <nav className="flex items-center">
+                <ul className="flex items-center">
                     <button onClick={() => setPagina("home")} className="bg-cyan-600 box-border p-2 rounded mx-1 hover:bg-cyan-900">Inicio</button>
                     <button onClick={() => setPagina("contacto")} className="bg-cyan-600 box-border p-2 rounded mx-1 hover:bg-cyan-900">Contáctanos</button>
                     <button onClick={() => setShowRegistro(true)} className="bg-cyan-600 box-border p-2 rounded mx-1 hover:bg-cyan-900">Regístrate</button>
                     <button onClick={() => setShowLogin(true)} className="bg-cyan-600 box-border p-2 rounded mx-1 hover:bg-cyan-900">Iniciar Sesión</button>
                 </ul>
+                <div className="ml-4">
+                    <NotificationBell />
+                </div>
             </nav>
             <InicioSesionModal isOpen={showLogin} onClose={() => setShowLogin(false)} setVista={setVista}/>
                 <RegistroModal isOpen={showRegistro} onClose={() => setShowRegistro(false)}/>

@@ -36,19 +36,17 @@ function LoginModal({ isOpen, onClose }) {
             }
 
             try {
-                // Reemplazo de FETCH por SUPABASE
-                const { error } = await supabase
-                    .from("usuarios") // Nombre de tu tabla
-                    .insert([
-                        {
-                            nombre: formulario.nombre,
-                            apellido: formulario.apellido,
-                            telefono: formulario.telefono,
-                            email: formulario.correo, 
-                            clave: formulario.password,
-                            id_rol: 1, 
-                        },
-                    ]);
+                // Registro nativo con Supabase Auth
+                const { data, error } = await supabase.auth.signUp({
+                    email: formulario.correo,
+                    password: formulario.password,
+                    options: {
+                        data: {
+                            username: `${formulario.nombre} ${formulario.apellido}`,
+                            telefono: formulario.telefono
+                        }
+                    }
+                });
 
                 if (error) throw error; 
 

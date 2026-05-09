@@ -6,6 +6,7 @@ import Usuarios from "./ModulosAdmin/Usuarios";
 import Estadisticas from "./ModulosAdmin/Estadisticas";
 import Publicaciones from "./ModulosAdmin/Publicaciones";
 import Comentarios from "./ModulosAdmin/Comentarios";
+import AdminArtistRequests from "../AdminArtistRequests";
 
 function PanelAdmin({ setVista }) {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
@@ -30,6 +31,10 @@ function PanelAdmin({ setVista }) {
                         </p>
 
                         <Estadisticas />
+                        
+                        <div className="mt-12">
+                            <AdminArtistRequests />
+                        </div>
                     </div>
                 )}
 
