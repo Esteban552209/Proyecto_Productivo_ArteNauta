@@ -3,6 +3,7 @@ import PerfilUsuario from './PerfilUsuario';
 import PublicacionesCom from '../PublicacionesCom';
 import HeaderPanel from './HeaderPanel';
 import Conversaciones from './ModulosConversaciones/VistaChats';
+import Notificaciones from './ModulosConversaciones/../Notificaciones';
 
 const API_URL = 'http://localhost:3002/publicaciones';
 
@@ -62,22 +63,15 @@ function PanelUsuario({ setVista }) {
                                     Error: {error}
                                 </p>
                             )}
-
-                            {!loading &&
-                                !error &&
-                                publicaciones.length === 0 && (
-                                    <p className="text-center text-gray-400 py-10">
-                                        Aún no hay obras publicadas.
-                                    </p>
-                                )}
-
+                            {!loading && !error && publicaciones.length === 0 && (
+                                <p className="text-center text-gray-400 py-10">
+                                    Aún no hay obras publicadas.
+                                </p>
+                            )}
                             {!loading && !error && publicaciones.length > 0 && (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                     {publicaciones.map((item) => (
-                                        <PublicacionesCom
-                                            key={item.id}
-                                            item={item}
-                                        />
+                                        <PublicacionesCom key={item.id} item={item} />
                                     ))}
                                 </div>
                             )}
@@ -85,11 +79,17 @@ function PanelUsuario({ setVista }) {
                     </div>
                 )}
 
+                {seccion === 'notificaciones' && (
+                    <Notificaciones usuario={usuario} />
+                )}
+
                 {seccion === 'conversaciones' && (
                     <Conversaciones usuario={usuario} />
                 )}
 
-                {seccion === 'perfil' && <PerfilUsuario usuario={usuario} />}
+                {seccion === 'perfil' && (
+                    <PerfilUsuario usuario={usuario} setSeccion={setSeccion} />
+                )}
             </main>
         </div>
     );

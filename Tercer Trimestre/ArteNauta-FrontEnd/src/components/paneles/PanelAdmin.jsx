@@ -6,7 +6,7 @@ import Usuarios from "./ModulosAdmin/Usuarios";
 import Estadisticas from "./ModulosAdmin/Estadisticas";
 import Publicaciones from "./ModulosAdmin/Publicaciones";
 import Comentarios from "./ModulosAdmin/Comentarios";
-import AdminArtistRequests from "../AdminArtistRequests";
+import Notificaciones from "./Notificaciones";
 
 function PanelAdmin({ setVista }) {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
@@ -29,25 +29,15 @@ function PanelAdmin({ setVista }) {
                         <p className="text-gray-500 mb-8">
                             Panel de administración de ArteNauta
                         </p>
-
                         <Estadisticas />
-                        
-                        <div className="mt-12">
-                            <AdminArtistRequests />
-                        </div>
                     </div>
                 )}
 
                 {seccion === "publicaciones" && <Publicaciones />}
-
                 {seccion === "usuarios" && <Usuarios />}
-
                 {seccion === "comentarios" && <Comentarios />}
-
-                {seccion === "conversaciones" && (
-                    <Conversaciones usuario={usuario} />
-                )}
-
+                {seccion === "notificaciones" && <Notificaciones usuario={usuario} />}
+                {seccion === "conversaciones" && <Conversaciones usuario={usuario} />}
                 {seccion === "perfil" && <PerfilUsuario usuario={usuario} />}
             </main>
         </div>

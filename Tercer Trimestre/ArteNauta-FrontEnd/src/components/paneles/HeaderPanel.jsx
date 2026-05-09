@@ -1,4 +1,5 @@
 import Swal from 'sweetalert2';
+import Notificaciones from './Notificaciones';
 
 function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
     const usuario = JSON.parse(localStorage.getItem('usuario'));
@@ -42,11 +43,8 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
                 <span className="font-bold text-lg">{titulos[rol]}</span>
             </div>
 
-            <nav className="flex gap-2">
-                <button
-                    onClick={() => setSeccion('inicio')}
-                    className={btn('inicio')}
-                >
+            <nav className="flex gap-2 items-center">
+                <button onClick={() => setSeccion('inicio')} className={btn('inicio')}>
                     Inicio
                 </button>
 
@@ -60,45 +58,29 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
                 )}
 
                 {rol === 'admin' && (
-                    <button
-                        onClick={() => setSeccion('usuarios')}
-                        className={btn('usuarios')}
-                    >
-                        Usuarios
-                    </button>
+                    <>
+                        <button onClick={() => setSeccion('usuarios')} className={btn('usuarios')}>
+                            Usuarios
+                        </button>
+                        <button onClick={() => setSeccion('publicaciones')} className={btn('publicaciones')}>
+                            Publicaciones
+                        </button>
+                        <button onClick={() => setSeccion('comentarios')} className={btn('comentarios')}>
+                            Comentarios
+                        </button>
+                    </>
                 )}
 
-                {rol === 'admin' && (
-                    <button
-                        onClick={() => setSeccion('publicaciones')}
-                        className={btn('publicaciones')}
-                    >
-                        Publicaciones
-                    </button>
-                )}
-
-                {rol === 'admin' && (
-                    <button
-                        onClick={() => setSeccion('comentarios')}
-                        className={btn('comentarios')}
-                    >
-                        Comentarios
-                    </button>
-                )}
-
-                <button
-                    onClick={() => setSeccion('conversaciones')}
-                    className={btn('conversaciones')}
-                >
+                <button onClick={() => setSeccion('conversaciones')} className={btn('conversaciones')}>
                     Conversaciones
                 </button>
 
-                <button
-                    onClick={() => setSeccion('perfil')}
-                    className={btn('perfil')}
-                >
+                <button onClick={() => setSeccion('perfil')} className={btn('perfil')}>
                     Mi Perfil
                 </button>
+
+                {/* 🔔 Campanita — abre dropdown con notificaciones */}
+                <Notificaciones usuario={usuario} />
 
                 <button
                     onClick={cerrarSesion}

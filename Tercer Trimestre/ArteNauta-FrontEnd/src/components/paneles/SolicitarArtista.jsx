@@ -1,98 +1,174 @@
-import React, { useEffect, useState } from "react";
-import supabase from "../../supabaseClient";
-import { useAuth } from "../../context/AuthContext";
+import { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabase";
 import Swal from "sweetalert2";
 
 function SolicitarArtista() {
-    const { currentUser, role } = useAuth();
-    const [requestStatus, setRequestStatus] = useState(null); // 'pending', 'accepted', 'rejected', or null
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
+    const idUsuario = usuario?.id_usuario;
+    const idRol = usuario?.id_rol;
 
-    useEffect(() => {
-        if (!currentUser?.id) {
-            setIsLoading(false);
-            return;
-        }
+    const [solicitud, setSolicitud] = useState(null);
+    const [mensaje, setMensaje] = useState("");
+    const [cargando, setCargando] = useState(true);
+    const [enviando, setEnviando] = useState(false);
+    const [mostrarForm, setMostrarForm] = useState(false);
 
-        const fetchRequestStatus = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from("artist_requests")
-                    .select("status")
-                    .eq("user_id", currentUser.id)
-                    .order("created_at", { ascending: false })
-                    .limit(1)
-                    .single();
+    // Solo visible para rol usuario (id_rol === 1)
+    if (idRol !== 1) return null;
 
-                if (error && error.code !== "PGRST116") {
-                    // PGRST116 means zero rows returned, which is fine
-                    console.error("Error fetching request status:", error);
-                } else if (data) {
-                    setRequestStatus(data.status);
-                }
-            } catch (err) {
-                console.error("Unexpected error:", err);
-            } finally {
-                setIsLoading(false);
+    useEffect(() => { cargar(); }, []);
+
+    async function cargar() {
+        const { data } = await supabase
+            .from("solicitudes")
+            .select("*")
+            .eq("id_usuario", idUsuario)
+            .eq("tipo_solicitud", "artista")
+            .order("fecha_solicitud", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        setSolicitud(data);
+        setCargando(false);
+    }
+
+    async function enviar() {
+        setEnviando(true);
+        try {
+            // 1. Crear solicitud
+            const { error } = await supabase
+                .from("solicitudes")
+                .insert({
+                    id_usuario: idUsuario,
+                    tipo_solicitud: "artista",
+                    estado_solicitud: "pendiente",
+                    mensaje: mensaje.trim() || null,
+                    fecha_solicitud: new Date().toISOString(),
+                });
+
+            if (error) throw error;
+
+            // 2. Notificar a todos los admins (id_rol === 3)
+            const { data: admins } = await supabase
+                .from("usuarios")
+                .select("id_usuario")
+                .eq("id_rol", 3);
+
+            if (admins?.length) {
+                await supabase.from("notificaciones").insert(
+                    admins.map(a => ({
+                        id_usuario: a.id_usuario,
+                        asunto: "Nueva solicitud de artista",
+                        descripcion: `${usuario.nombre} quiere convertirse en artista.`,
+                        tipo_notificacion: "nueva_solicitud_artista",
+                        leida: false,
+                        fecha_notificacion: new Date().toISOString(),
+                    }))
+                );
             }
-        };
 
-        fetchRequestStatus();
-    }, [currentUser?.id]);
+            setMostrarForm(false);
+            setMensaje("");
+            await cargar();
 
-    const handleSolicitar = async () => {
-        setIsSubmitting(true);
-
-        const { error } = await supabase
-            .from("artist_requests")
-            .insert({ user_id: currentUser.id, status: "pending" });
-
-        if (error) {
-            console.error("Error inserting request:", error);
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: "No se pudo enviar la solicitud. Intenta nuevamente.",
-                confirmButtonColor: "#0891b2",
-            });
-            setIsSubmitting(false);
-        } else {
-            setRequestStatus("pending");
             Swal.fire({
                 icon: "success",
-                title: "Tu solicitud fue enviada exitosamente ✅",
-                text: "El administrador revisará tu perfil.",
+                title: "¡Solicitud enviada!",
+                text: "Te notificaremos cuando el administrador responda.",
                 confirmButtonColor: "#0891b2",
                 timer: 2500,
                 showConfirmButton: false,
             });
-            setIsSubmitting(false);
+        } catch (err) {
+            console.error(err);
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "No se pudo enviar la solicitud. Intenta de nuevo.",
+                confirmButtonColor: "#0891b2",
+            });
+        } finally {
+            setEnviando(false);
         }
-    };
+    }
 
-    if (role !== "usuario") return null;
-    if (isLoading) return <div className="text-sm text-gray-500 mt-4 text-center">Cargando estado...</div>;
-    if (requestStatus === "accepted") return null;
+    if (cargando) return null;
 
-    const isPending = requestStatus === "pending";
+    // Ya tiene solicitud pendiente
+    if (solicitud?.estado_solicitud === "pendiente") {
+        return (
+            <div className="flex gap-3 items-start p-4 bg-yellow-50 border border-yellow-200 rounded-xl mt-4">
+                <span className="text-2xl">⏳</span>
+                <div>
+                    <p className="font-semibold text-yellow-800">Solicitud en revisión</p>
+                    <p className="text-sm text-yellow-700 mt-1">
+                        Tu solicitud está siendo revisada. Te notificaremos cuando haya una respuesta.
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
+    // Rechazada — puede volver a intentar
+    if (solicitud?.estado_solicitud === "rechazada") {
+        return (
+            <div className="flex gap-3 items-start p-4 bg-red-50 border border-red-200 rounded-xl mt-4">
+                <span className="text-2xl">❌</span>
+                <div>
+                    <p className="font-semibold text-red-800">Solicitud no aprobada</p>
+                    <p className="text-sm text-red-700 mt-1">Puedes volver a intentarlo.</p>
+                    <button
+                        onClick={() => setMostrarForm(true)}
+                        className="mt-2 text-sm bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-1 rounded-lg transition"
+                    >
+                        Volver a solicitar
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Botón inicial
+    if (!mostrarForm) {
+        return (
+            <button
+                onClick={() => setMostrarForm(true)}
+                className="mt-4 flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold rounded-xl transition"
+            >
+                🎨 Solicitar ser artista
+            </button>
+        );
+    }
+
+    // Formulario
     return (
-        <button
-            onClick={handleSolicitar}
-            disabled={isPending || isSubmitting}
-            className={`w-full mt-4 border-2 border-dashed py-3 rounded-xl font-semibold transition text-sm ${
-                isPending || isSubmitting
-                    ? "border-gray-300 text-gray-400 cursor-not-allowed"
-                    : "border-cyan-300 hover:border-cyan-500 text-cyan-600 hover:text-cyan-700"
-            }`}
-        >
-            {isSubmitting
-                ? "Procesando..."
-                : isPending
-                ? "Solicitud en revisión..."
-                : "Solicitar ser artista"}
-        </button>
+        <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
+            <h3 className="font-semibold text-gray-800">Solicitar ser artista</h3>
+            <p className="text-sm text-gray-600">Cuéntanos sobre tu trabajo (opcional):</p>
+            <textarea
+                value={mensaje}
+                onChange={e => setMensaje(e.target.value)}
+                placeholder="Describe tu experiencia o motivación..."
+                rows={3}
+                maxLength={500}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-cyan-400"
+            />
+            <div className="flex gap-2 justify-end">
+                <button
+                    onClick={() => { setMostrarForm(false); setMensaje(""); }}
+                    disabled={enviando}
+                    className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100"
+                >
+                    Cancelar
+                </button>
+                <button
+                    onClick={enviar}
+                    disabled={enviando}
+                    className="px-4 py-2 text-sm bg-cyan-600 hover:bg-cyan-700 disabled:opacity-60 text-white font-semibold rounded-lg transition"
+                >
+                    {enviando ? "Enviando..." : "Enviar solicitud"}
+                </button>
+            </div>
+        </div>
     );
 }
 
