@@ -4,37 +4,33 @@ import { supabase } from '../../lib/supabase';
 
 function Notificaciones({ usuario }) {
     const idUsuario = usuario?.id_usuario;
-    const idRol = usuario?.id_rol;
+    const idRol = Number(usuario?.id_rol);
 
     const [notificaciones, setNotificaciones] = useState([]);
     const [solicitudes, setSolicitudes] = useState([]);
     const [abierto, setAbierto] = useState(false);
     const ref = useRef(null);
 
-    const totalBadge = notificaciones.length + solicitudes.length;
+    const totalBadge = notificaciones.filter(n => !n.leida).length + solicitudes.length;
 
     useEffect(() => {
         if (!idUsuario) return;
         cargar();
 
-        // Realtime notificaciones
         const canal = supabase
             .channel(`notif-${idUsuario}`)
             .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'notificaciones',
+                event: 'INSERT', schema: 'public', table: 'notificaciones',
                 filter: `id_usuario=eq.${idUsuario}`,
             }, payload => {
                 setNotificaciones(prev => [payload.new, ...prev]);
             })
             .subscribe();
 
-        // Realtime solicitudes (solo admin)
         let canalSol;
         if (idRol === 3) {
             canalSol = supabase
-                .channel(`solicitudes-${idUsuario}`)
+                .channel(`solicitudes-notif-${idUsuario}`)
                 .on('postgres_changes', {
                     event: '*', schema: 'public', table: 'solicitudes',
                 }, () => cargarSolicitudes())
@@ -47,7 +43,6 @@ function Notificaciones({ usuario }) {
         };
     }, [idUsuario]);
 
-    // Cerrar al click afuera
     useEffect(() => {
         const fn = (e) => {
             if (ref.current && !ref.current.contains(e.target)) setAbierto(false);
@@ -71,6 +66,7 @@ function Notificaciones({ usuario }) {
         const { data } = await supabase
             .from('solicitudes')
             .select('*, usuarios(nombre, apellido)')
+            .eq('tipo_solicitud', 'artista')
             .eq('estado_solicitud', 'Pendiente');
         setSolicitudes(data || []);
     }
@@ -85,15 +81,20 @@ function Notificaciones({ usuario }) {
                 .update({ id_rol: 2 })
                 .eq('id_usuario', sol.id_usuario);
 
+            // ← fix: agregar descripcion para evitar 400
             await supabase.from('notificaciones').insert({
-                asunto: '🎉 ¡Tu solicitud para ser artista fue aprobada! Ya puedes subir obras.',
-                tipo_notificacion: 'solicitud_aprobada',
-                id_usuario: sol.id_usuario,
+                id_usuario:         sol.id_usuario,
+                asunto:             '¡Tu solicitud para ser artista fue aprobada!',
+                descripcion:        'Ya puedes subir tus obras en ArteNauta. ¡Bienvenido!',
+                tipo_notificacion:  'solicitud_aprobada',
+                leida:              false,
                 fecha_notificacion: new Date().toISOString(),
             });
 
+            // Quitar de la lista inmediatamente
             setSolicitudes(prev => prev.filter(s => s.id_solicitud !== sol.id_solicitud));
-            Swal.fire({ icon: 'success', title: 'Solicitud aprobada', confirmButtonColor: '#0891b2', timer: 2000, showConfirmButton: false });
+
+            Swal.fire({ icon: 'success', title: '¡Solicitud aprobada!', confirmButtonColor: '#0891b2', timer: 2000, showConfirmButton: false });
         } catch (e) {
             console.error(e);
         }
@@ -105,18 +106,32 @@ function Notificaciones({ usuario }) {
                 .update({ estado_solicitud: 'Rechazada' })
                 .eq('id_solicitud', sol.id_solicitud);
 
+            // ← fix: agregar descripcion para evitar 400
             await supabase.from('notificaciones').insert({
-                asunto: 'Tu solicitud para ser artista fue rechazada.',
-                tipo_notificacion: 'solicitud_rechazada',
-                id_usuario: sol.id_usuario,
+                id_usuario:         sol.id_usuario,
+                asunto:             'Tu solicitud para ser artista no fue aprobada.',
+                descripcion:        'Puedes volver a intentarlo más adelante desde tu perfil.',
+                tipo_notificacion:  'solicitud_rechazada',
+                leida:              false,
                 fecha_notificacion: new Date().toISOString(),
             });
 
+            // Quitar de la lista inmediatamente
             setSolicitudes(prev => prev.filter(s => s.id_solicitud !== sol.id_solicitud));
+
             Swal.fire({ icon: 'info', title: 'Solicitud rechazada', confirmButtonColor: '#0891b2', timer: 2000, showConfirmButton: false });
         } catch (e) {
             console.error(e);
         }
+    }
+
+    async function marcarLeida(id) {
+        await supabase.from('notificaciones')
+            .update({ leida: true })
+            .eq('id_notificacion', id);
+        setNotificaciones(prev =>
+            prev.map(n => n.id_notificacion === id ? { ...n, leida: true } : n)
+        );
     }
 
     function tiempoRelativo(fecha) {
@@ -131,11 +146,11 @@ function Notificaciones({ usuario }) {
     }
 
     const iconos = {
-        solicitud_aprobada: '✅',
+        solicitud_aprobada:  '✅',
         solicitud_rechazada: '❌',
-        censura_obra: '🚫',
-        advertencia: '⚠️',
-        mensaje_admin: '💬',
+        censura_obra:        '🚫',
+        advertencia:         '⚠️',
+        mensaje_admin:       '💬',
     };
 
     return (
@@ -144,7 +159,6 @@ function Notificaciones({ usuario }) {
             <button
                 onClick={() => setAbierto(!abierto)}
                 className="relative bg-cyan-600 hover:bg-cyan-900 p-2 rounded transition"
-                title="Notificaciones"
             >
                 <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -160,7 +174,6 @@ function Notificaciones({ usuario }) {
             {/* Dropdown */}
             {abierto && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
-                    {/* Header */}
                     <div className="flex items-center justify-between px-4 py-3 bg-cyan-50 border-b border-cyan-100">
                         <h3 className="font-semibold text-cyan-800 text-sm">Notificaciones</h3>
                         {totalBadge > 0 && (
@@ -171,7 +184,8 @@ function Notificaciones({ usuario }) {
                     </div>
 
                     <div className="max-h-96 overflow-y-auto">
-                        {/* Solicitudes pendientes — solo admin (id_rol === 3) */}
+
+                        {/* Solicitudes pendientes — solo admin */}
                         {idRol === 3 && solicitudes.length > 0 && (
                             <div className="divide-y divide-yellow-100">
                                 {solicitudes.map(sol => (
@@ -206,16 +220,20 @@ function Notificaciones({ usuario }) {
                             </div>
                         )}
 
-                        {/* Notificaciones del usuario */}
+                        {/* Notificaciones normales */}
                         {notificaciones.length === 0 && solicitudes.length === 0 ? (
                             <div className="p-8 text-center">
                                 <div className="text-3xl mb-2">🔔</div>
                                 <p className="text-gray-400 text-sm">Sin notificaciones</p>
                             </div>
-                        ) : (
+                        ) : notificaciones.length > 0 ? (
                             <div className="divide-y divide-gray-50">
                                 {notificaciones.map(n => (
-                                    <div key={n.id_notificacion} className="flex gap-3 px-4 py-3 hover:bg-gray-50 transition">
+                                    <div
+                                        key={n.id_notificacion}
+                                        onClick={() => !n.leida && marcarLeida(n.id_notificacion)}
+                                        className={`flex gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition ${!n.leida ? 'bg-cyan-50' : ''}`}
+                                    >
                                         <span className="text-xl flex-shrink-0 mt-0.5">
                                             {iconos[n.tipo_notificacion] || '📢'}
                                         </span>
@@ -223,14 +241,20 @@ function Notificaciones({ usuario }) {
                                             <p className="text-sm font-medium text-gray-800 leading-snug">
                                                 {n.asunto}
                                             </p>
+                                            {n.descripcion && (
+                                                <p className="text-xs text-gray-500 mt-0.5">{n.descripcion}</p>
+                                            )}
                                             <span className="text-xs text-gray-400 mt-1 block">
                                                 {tiempoRelativo(n.fecha_notificacion)}
                                             </span>
                                         </div>
+                                        {!n.leida && (
+                                            <span className="w-2 h-2 bg-cyan-500 rounded-full flex-shrink-0 mt-2" />
+                                        )}
                                     </div>
                                 ))}
                             </div>
-                        )}
+                        ) : null}
                     </div>
                 </div>
             )}
