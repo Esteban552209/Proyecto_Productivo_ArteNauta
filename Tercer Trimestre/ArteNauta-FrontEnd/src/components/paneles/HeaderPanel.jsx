@@ -1,8 +1,9 @@
 import Swal from 'sweetalert2';
+import Notificaciones from './Notificaciones';
 
 function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
     const usuario = JSON.parse(localStorage.getItem('usuario'));
-    const rol = usuario?.rol;
+    const idRol = Number(usuario?.id_rol);
 
     const cerrarSesion = () => {
         Swal.fire({
@@ -15,8 +16,7 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
             cancelButtonText: 'Cancelar',
         }).then((result) => {
             if (result.isConfirmed) {
-                localStorage.removeItem('usuario');
-                localStorage.removeItem('token');
+                localStorage.clear();
                 setVista(null);
             }
         });
@@ -28,82 +28,51 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
             : 'bg-cyan-600 hover:bg-cyan-900'
         }`;
 
-    const titulos = {
-        admin: 'Panel Admin',
-        artista: 'Panel Artista',
-        usuario: 'Panel Usuario',
-    };
+    const rolLabel = { 3: 'Panel Administrador', 2: 'Panel Artista', 1: 'Panel Usuario' };
 
     return (
         <header className="bg-gradient-to-r from-cyan-900 to-cyan-400 text-white p-4 flex justify-between items-center">
             <div className="flex items-center gap-3">
-                <img src="../src/assets/LOGO.png" alt="" className="h-14"
+                <img src="../src/assets/LOGO.png" alt="Logo" className="h-20"
                     onError={(e) => e.target.style.display = 'none'} />
-                <span className="font-bold text-lg">{titulos[rol]}</span>
+                <div className="flex flex-col">
+                    <span className="font-bold text-lg leading-tight">
+                        {rolLabel[idRol] || 'ArteNauta'}
+                    </span>
+                    <span className="text-xs opacity-75">Hola, {usuario?.nombre}</span>
+                </div>
             </div>
 
-            <nav className="flex gap-2">
-                <button
-                    onClick={() => setSeccion('inicio')}
-                    className={btn('inicio')}
-                >
+            <nav className="flex gap-2 items-center">
+                <button onClick={() => setSeccion('inicio')} className={btn('inicio')}>
                     Inicio
                 </button>
 
-                {rol === 'artista' && (
-                    <button
-                        onClick={onSubirArte}
-                        className="px-4 py-2 rounded font-medium transition bg-cyan-600 hover:bg-cyan-900"
-                    >
+                {idRol === 2 && (
+                    <button onClick={onSubirArte} className="px-4 py-2 rounded font-medium transition bg-cyan-600 hover:bg-cyan-900">
                         Subir Arte
                     </button>
                 )}
 
-                {rol === 'admin' && (
-                    <button
-                        onClick={() => setSeccion('usuarios')}
-                        className={btn('usuarios')}
-                    >
-                        Usuarios
-                    </button>
+                {idRol === 3 && (
+                    <>
+                        <button onClick={() => setSeccion('usuarios')} className={btn('usuarios')}>Usuarios</button>
+                        <button onClick={() => setSeccion('publicaciones')} className={btn('publicaciones')}>Publicaciones</button>
+                        <button onClick={() => setSeccion('comentarios')} className={btn('comentarios')}>Comentarios</button>
+                    </>
                 )}
 
-                {rol === 'admin' && (
-                    <button
-                        onClick={() => setSeccion('publicaciones')}
-                        className={btn('publicaciones')}
-                    >
-                        Publicaciones
-                    </button>
-                )}
-
-                {rol === 'admin' && (
-                    <button
-                        onClick={() => setSeccion('comentarios')}
-                        className={btn('comentarios')}
-                    >
-                        Comentarios
-                    </button>
-                )}
-
-                <button
-                    onClick={() => setSeccion('conversaciones')}
-                    className={btn('conversaciones')}
-                >
+                <button onClick={() => setSeccion('conversaciones')} className={btn('conversaciones')}>
                     Conversaciones
                 </button>
-
-                <button
-                    onClick={() => setSeccion('perfil')}
-                    className={btn('perfil')}
-                >
+                <button onClick={() => setSeccion('perfil')} className={btn('perfil')}>
                     Mi Perfil
                 </button>
 
-                <button
-                    onClick={cerrarSesion}
-                    className="px-4 py-2 rounded font-medium transition bg-cyan-600 hover:bg-red-800"
-                >
+                {/* Campana — usa el componente Notificaciones directamente */}
+                <Notificaciones usuario={usuario} />
+
+                <button onClick={cerrarSesion} className="px-4 py-2 rounded font-medium transition bg-cyan-600 hover:bg-red-800">
                     Cerrar Sesión
                 </button>
             </nav>

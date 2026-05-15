@@ -7,6 +7,7 @@ import PublicacionesCom from '../PublicacionesCom';
 import HeaderPanel from './HeaderPanel';
 
 import Conversaciones from './ModulosConversaciones/VistaChats';
+import Notificaciones from './ModulosConversaciones/../Notificaciones';
 
 import { supabase } from '../../lib/supabase';
 
@@ -98,40 +99,26 @@ function PanelUsuario({ setVista }) {
                                 </p>
 
                             )}
-
-                            {!loading &&
-                                !error &&
-                                publicaciones.length === 0 && (
-
-                                    <p className="text-center text-gray-400 py-10">
-                                        Aún no hay obras publicadas.
-                                    </p>
-
-                                )}
-
-                            {!loading &&
-                                !error &&
-                                publicaciones.length > 0 && (
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-                                        {publicaciones.map((item) => (
-
-                                            <PublicacionesCom
-                                                key={item.id}
-                                                item={item}
-                                            />
-
-                                        ))}
-
-                                    </div>
-
-                                )}
-
+                            {!loading && !error && publicaciones.length === 0 && (
+                                <p className="text-center text-gray-400 py-10">
+                                    Aún no hay obras publicadas.
+                                </p>
+                            )}
+                            {!loading && !error && publicaciones.length > 0 && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    {publicaciones.map((item) => (
+                                        <PublicacionesCom key={item.id} item={item} />
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                     </div>
 
+                )}
+
+                {seccion === 'notificaciones' && (
+                    <Notificaciones usuario={usuario} />
                 )}
 
                 {seccion === 'conversaciones' && (
@@ -139,9 +126,8 @@ function PanelUsuario({ setVista }) {
                 )}
 
                 {seccion === 'perfil' && (
-                    <PerfilUsuario usuario={usuario} />
+                    <PerfilUsuario usuario={usuario} setSeccion={setSeccion} />
                 )}
-
             </main>
 
         </div>

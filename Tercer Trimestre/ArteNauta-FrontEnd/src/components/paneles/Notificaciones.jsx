@@ -1,198 +1,261 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { supabase } from '../../lib/supabase';
 
 function Notificaciones({ usuario }) {
+    const idUsuario = usuario?.id_usuario;
+    const idRol = Number(usuario?.id_rol);
+
     const [notificaciones, setNotificaciones] = useState([]);
     const [solicitudes, setSolicitudes] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [abierto, setAbierto] = useState(false);
+    const ref = useRef(null);
+
+    const totalBadge = notificaciones.filter(n => !n.leida).length + solicitudes.length;
 
     useEffect(() => {
-        cargarDatos();
+        if (!idUsuario) return;
+        cargar();
+
+        const canal = supabase
+            .channel(`notif-${idUsuario}`)
+            .on('postgres_changes', {
+                event: 'INSERT', schema: 'public', table: 'notificaciones',
+                filter: `id_usuario=eq.${idUsuario}`,
+            }, payload => {
+                setNotificaciones(prev => [payload.new, ...prev]);
+            })
+            .subscribe();
+
+        let canalSol;
+        if (idRol === 3) {
+            canalSol = supabase
+                .channel(`solicitudes-notif-${idUsuario}`)
+                .on('postgres_changes', {
+                    event: '*', schema: 'public', table: 'solicitudes',
+                }, () => cargarSolicitudes())
+                .subscribe();
+        }
+
+        return () => {
+            supabase.removeChannel(canal);
+            if (canalSol) supabase.removeChannel(canalSol);
+        };
+    }, [idUsuario]);
+
+    useEffect(() => {
+        const fn = (e) => {
+            if (ref.current && !ref.current.contains(e.target)) setAbierto(false);
+        };
+        document.addEventListener('mousedown', fn);
+        return () => document.removeEventListener('mousedown', fn);
     }, []);
 
-    const cargarDatos = async () => {
+    async function cargar() {
+        const { data } = await supabase
+            .from('notificaciones')
+            .select('*')
+            .eq('id_usuario', idUsuario)
+            .order('fecha_notificacion', { ascending: false })
+            .limit(20);
+        if (data) setNotificaciones(data);
+        if (idRol === 3) cargarSolicitudes();
+    }
+
+    async function cargarSolicitudes() {
+        const { data } = await supabase
+            .from('solicitudes')
+            .select('*, usuarios(nombre, apellido)')
+            .eq('tipo_solicitud', 'artista')
+            .eq('estado_solicitud', 'Pendiente');
+        setSolicitudes(data || []);
+    }
+
+    async function aprobarSolicitud(sol) {
         try {
-            // Cargar notificaciones del usuario
-            const { data: notifs, error: errorNotifs } = await supabase
-                .from('notificaciones')
-                .select('*')
-                .eq('id_usuario', usuario?.id_usuario)
-                .order('fecha_notificacion', { ascending: false });
+            await supabase.from('solicitudes')
+                .update({ estado_solicitud: 'Aceptada' })
+                .eq('id_solicitud', sol.id_solicitud);
 
-            if (errorNotifs) throw errorNotifs;
+            await supabase.from('usuarios')
+                .update({ id_rol: 2 })
+                .eq('id_usuario', sol.id_usuario);
 
-            // Si es admin, cargar solicitudes pendientes
-            if (usuario?.id_rol === 3) {
-                const { data: solicitudesData, error: errorSolicitudes } = await supabase
-                    .from('solicitudes')
-                    .select('*, usuarios(nombre, apellido)')
-                    .eq('estado_solicitud', 'pendiente');
-
-                if (!errorSolicitudes) setSolicitudes(solicitudesData || []);
-            }
-
-            setNotificaciones(notifs || []);
-        } catch (error) {
-            console.log(error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    // Admin: aprobar solicitud
-    const aprobarSolicitud = async (solicitud) => {
-        try {
-            // Cambiar estado de la solicitud
-            await supabase
-                .from('solicitudes')
-                .update({ estado_solicitud: 'aprobada' })
-                .eq('id_solicitud', solicitud.id_solicitud);
-
-            // Cambiar rol del usuario a artista
-            await supabase
-                .from('usuarios')
-                .update({ id_rol: 2 }) // 2 = artista
-                .eq('id_usuario', solicitud.id_usuario);
-
-            // Crear notificación para el usuario
-            await supabase
-                .from('notificaciones')
-                .insert({
-                    asunto: '¡Tu solicitud para ser artista fue aprobada! Ya puedes subir obras.',
-                    tipo_notificacion: 'solicitud_aprobada',
-                    id_usuario: solicitud.id_usuario,
-                    fecha_notificacion: new Date().toISOString(),
-                });
-
-            setSolicitudes(prev =>
-                prev.filter(s => s.id_solicitud !== solicitud.id_solicitud)
-            );
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Solicitud aprobada',
-                text: 'El usuario ahora es artista',
-                confirmButtonColor: '#0891b2',
-                timer: 2000,
-                showConfirmButton: false,
+            // ← fix: agregar descripcion para evitar 400
+            await supabase.from('notificaciones').insert({
+                id_usuario:         sol.id_usuario,
+                asunto:             '¡Tu solicitud para ser artista fue aprobada!',
+                descripcion:        'Ya puedes subir tus obras en ArteNauta. ¡Bienvenido!',
+                tipo_notificacion:  'solicitud_aprobada',
+                leida:              false,
+                fecha_notificacion: new Date().toISOString(),
             });
-        } catch (error) {
-            console.log(error);
-            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo aprobar', confirmButtonColor: '#0891b2' });
-        }
-    };
 
-    // Admin: rechazar solicitud
-    const rechazarSolicitud = async (solicitud) => {
+            // Quitar de la lista inmediatamente
+            setSolicitudes(prev => prev.filter(s => s.id_solicitud !== sol.id_solicitud));
+
+            Swal.fire({ icon: 'success', title: '¡Solicitud aprobada!', confirmButtonColor: '#0891b2', timer: 2000, showConfirmButton: false });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function rechazarSolicitud(sol) {
         try {
-            await supabase
-                .from('solicitudes')
-                .update({ estado_solicitud: 'rechazada' })
-                .eq('id_solicitud', solicitud.id_solicitud);
+            await supabase.from('solicitudes')
+                .update({ estado_solicitud: 'Rechazada' })
+                .eq('id_solicitud', sol.id_solicitud);
 
-            // Notificar al usuario
-            await supabase
-                .from('notificaciones')
-                .insert({
-                    asunto: 'Tu solicitud para ser artista fue rechazada.',
-                    tipo_notificacion: 'solicitud_rechazada',
-                    id_usuario: solicitud.id_usuario,
-                    fecha_notificacion: new Date().toISOString(),
-                });
-
-            setSolicitudes(prev =>
-                prev.filter(s => s.id_solicitud !== solicitud.id_solicitud)
-            );
-
-            Swal.fire({
-                icon: 'info',
-                title: 'Solicitud rechazada',
-                confirmButtonColor: '#0891b2',
-                timer: 2000,
-                showConfirmButton: false,
+            // ← fix: agregar descripcion para evitar 400
+            await supabase.from('notificaciones').insert({
+                id_usuario:         sol.id_usuario,
+                asunto:             'Tu solicitud para ser artista no fue aprobada.',
+                descripcion:        'Puedes volver a intentarlo más adelante desde tu perfil.',
+                tipo_notificacion:  'solicitud_rechazada',
+                leida:              false,
+                fecha_notificacion: new Date().toISOString(),
             });
-        } catch (error) {
-            console.log(error);
-            Swal.fire({ icon: 'error', title: 'Error', confirmButtonColor: '#0891b2' });
+
+            // Quitar de la lista inmediatamente
+            setSolicitudes(prev => prev.filter(s => s.id_solicitud !== sol.id_solicitud));
+
+            Swal.fire({ icon: 'info', title: 'Solicitud rechazada', confirmButtonColor: '#0891b2', timer: 2000, showConfirmButton: false });
+        } catch (e) {
+            console.error(e);
         }
-    };
+    }
 
-    const tipoConfig = {
-        solicitud_aprobada: { color: 'border-l-green-400 bg-green-50', icono: '✅', label: 'Aprobada' },
-        solicitud_rechazada: { color: 'border-l-red-400 bg-red-50', icono: '❌', label: 'Rechazada' },
-        censura_obra: { color: 'border-l-red-400 bg-red-50', icono: '⚠️', label: 'Censura' },
-    };
+    async function marcarLeida(id) {
+        await supabase.from('notificaciones')
+            .update({ leida: true })
+            .eq('id_notificacion', id);
+        setNotificaciones(prev =>
+            prev.map(n => n.id_notificacion === id ? { ...n, leida: true } : n)
+        );
+    }
 
-    if (loading) return <p className="text-center text-gray-400 py-10">Cargando notificaciones...</p>;
+    function tiempoRelativo(fecha) {
+        const diff = Date.now() - new Date(fecha).getTime();
+        const m = Math.floor(diff / 60000);
+        const h = Math.floor(diff / 3600000);
+        const d = Math.floor(diff / 86400000);
+        if (m < 1) return 'Ahora';
+        if (m < 60) return `Hace ${m} min`;
+        if (h < 24) return `Hace ${h}h`;
+        return `Hace ${d}d`;
+    }
+
+    const iconos = {
+        solicitud_aprobada:  '✅',
+        solicitud_rechazada: '❌',
+        censura_obra:        '🚫',
+        advertencia:         '⚠️',
+        mensaje_admin:       '💬',
+    };
 
     return (
-        <div className="max-w-2xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-cyan-800">Notificaciones</h1>
-            </div>
+        <div className="relative" ref={ref}>
+            {/* Botón campanita */}
+            <button
+                onClick={() => setAbierto(!abierto)}
+                className="relative bg-cyan-600 hover:bg-cyan-900 p-2 rounded transition"
+            >
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {totalBadge > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center animate-pulse">
+                        {totalBadge > 9 ? '9+' : totalBadge}
+                    </span>
+                )}
+            </button>
 
-            {/* Solicitudes pendientes — solo admin */}
-            {usuario?.id_rol === 1 && solicitudes.length > 0 && (
-                <div className="mb-6">
-                    <h2 className="text-lg font-bold text-yellow-700 mb-3">⏳ Solicitudes pendientes</h2>
-                    <div className="flex flex-col gap-3">
-                        {solicitudes.map(sol => (
-                            <div key={sol.id_solicitud} className="rounded-2xl shadow border-l-4 border-l-yellow-400 bg-yellow-50 p-4">
-                                <p className="text-sm font-semibold text-gray-700">
-                                    🎨 {sol.usuarios?.nombre} {sol.usuarios?.apellido} solicita ser artista
-                                </p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                    {new Date(sol.fecha_solicitud).toLocaleDateString('es-ES', {
-                                        day: '2-digit', month: 'long', year: 'numeric'
-                                    })}
-                                </p>
-                                <div className="flex gap-2 mt-2">
-                                    <button
-                                        onClick={() => aprobarSolicitud(sol)}
-                                        className="bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-1 rounded-lg font-semibold transition"
-                                    >
-                                        Aprobar
-                                    </button>
-                                    <button
-                                        onClick={() => rechazarSolicitud(sol)}
-                                        className="bg-red-400 hover:bg-red-500 text-white text-xs px-3 py-1 rounded-lg font-semibold transition"
-                                    >
-                                        Rechazar
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+            {/* Dropdown */}
+            {abierto && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 bg-cyan-50 border-b border-cyan-100">
+                        <h3 className="font-semibold text-cyan-800 text-sm">Notificaciones</h3>
+                        {totalBadge > 0 && (
+                            <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
+                                {totalBadge}
+                            </span>
+                        )}
                     </div>
-                </div>
-            )}
 
-            {/* Notificaciones del usuario */}
-            {notificaciones.length === 0 ? (
-                <div className="bg-white rounded-2xl shadow p-10 text-center text-gray-400">
-                    <p className="text-4xl mb-3">🔔</p>
-                    <p>No tienes notificaciones</p>
-                </div>
-            ) : (
-                <div className="flex flex-col gap-3">
-                    {notificaciones.map(notif => {
-                        const config = tipoConfig[notif.tipo_notificacion] || { color: 'border-l-gray-300 bg-white', icono: '🔔' };
-                        return (
-                            <div key={notif.id_notificacion} className={`rounded-2xl shadow border-l-4 p-4 ${config.color}`}>
-                                <div className="flex items-start gap-3">
-                                    <span className="text-2xl">{config.icono}</span>
-                                    <div>
-                                        <p className="text-sm font-semibold text-gray-700">{notif.asunto}</p>
-                                        <p className="text-xs text-gray-400 mt-1">
-                                            {new Date(notif.fecha_notificacion).toLocaleDateString('es-ES', {
-                                                day: '2-digit', month: 'long', year: 'numeric'
-                                            })}
-                                        </p>
+                    <div className="max-h-96 overflow-y-auto">
+
+                        {/* Solicitudes pendientes — solo admin */}
+                        {idRol === 3 && solicitudes.length > 0 && (
+                            <div className="divide-y divide-yellow-100">
+                                {solicitudes.map(sol => (
+                                    <div key={sol.id_solicitud} className="px-4 py-3 bg-yellow-50">
+                                        <div className="flex items-start gap-2 mb-2">
+                                            <span className="text-lg">⏳</span>
+                                            <div>
+                                                <p className="text-sm font-semibold text-yellow-800">
+                                                    {sol.usuarios?.nombre} {sol.usuarios?.apellido} quiere ser artista
+                                                </p>
+                                                <p className="text-xs text-yellow-600">
+                                                    {tiempoRelativo(sol.fecha_solicitud)}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => aprobarSolicitud(sol)}
+                                                className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-1.5 rounded-lg font-semibold transition"
+                                            >
+                                                ✅ Aprobar
+                                            </button>
+                                            <button
+                                                onClick={() => rechazarSolicitud(sol)}
+                                                className="flex-1 bg-red-400 hover:bg-red-500 text-white text-xs py-1.5 rounded-lg font-semibold transition"
+                                            >
+                                                ❌ Rechazar
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
+                                ))}
                             </div>
-                        );
-                    })}
+                        )}
+
+                        {/* Notificaciones normales */}
+                        {notificaciones.length === 0 && solicitudes.length === 0 ? (
+                            <div className="p-8 text-center">
+                                <div className="text-3xl mb-2">🔔</div>
+                                <p className="text-gray-400 text-sm">Sin notificaciones</p>
+                            </div>
+                        ) : notificaciones.length > 0 ? (
+                            <div className="divide-y divide-gray-50">
+                                {notificaciones.map(n => (
+                                    <div
+                                        key={n.id_notificacion}
+                                        onClick={() => !n.leida && marcarLeida(n.id_notificacion)}
+                                        className={`flex gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition ${!n.leida ? 'bg-cyan-50' : ''}`}
+                                    >
+                                        <span className="text-xl flex-shrink-0 mt-0.5">
+                                            {iconos[n.tipo_notificacion] || '📢'}
+                                        </span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-gray-800 leading-snug">
+                                                {n.asunto}
+                                            </p>
+                                            {n.descripcion && (
+                                                <p className="text-xs text-gray-500 mt-0.5">{n.descripcion}</p>
+                                            )}
+                                            <span className="text-xs text-gray-400 mt-1 block">
+                                                {tiempoRelativo(n.fecha_notificacion)}
+                                            </span>
+                                        </div>
+                                        {!n.leida && (
+                                            <span className="w-2 h-2 bg-cyan-500 rounded-full flex-shrink-0 mt-2" />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : null}
+                    </div>
                 </div>
             )}
         </div>
