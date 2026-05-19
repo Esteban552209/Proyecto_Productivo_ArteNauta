@@ -11,6 +11,7 @@ import Notificaciones from "./Notificaciones";
 function PanelAdmin({ setVista }) {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
     const [seccion, setSeccion] = useState("inicio");
+    const [sidebarAbierto, setSidebarAbierto] = useState(false);
 
     return (
         <div className="min-h-screen bg-cyan-50 flex flex-col">
@@ -18,6 +19,8 @@ function PanelAdmin({ setVista }) {
                 seccion={seccion}
                 setSeccion={setSeccion}
                 setVista={setVista}
+                sidebarAbierto={sidebarAbierto}
+                setSidebarAbierto={setSidebarAbierto}
             />
 
             <main className="flex-1 p-8 max-w-5xl mx-auto w-full">
@@ -36,8 +39,12 @@ function PanelAdmin({ setVista }) {
                 {seccion === "publicaciones" && <Publicaciones />}
                 {seccion === "usuarios" && <Usuarios />}
                 {seccion === "comentarios" && <Comentarios />}
-                {seccion === "notificaciones" && <Notificaciones usuario={usuario} />}
-                {seccion === "conversaciones" && <Conversaciones usuario={usuario} />}
+                {seccion === "notificaciones" && (
+                    <Notificaciones usuario={usuario} />
+                )}
+                {seccion === "conversaciones" && (
+                    <Conversaciones usuario={usuario} />
+                )}
                 {seccion === "perfil" && <PerfilUsuario usuario={usuario} />}
             </main>
         </div>
