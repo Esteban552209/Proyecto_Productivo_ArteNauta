@@ -27,6 +27,8 @@ app.get("/Muro-Publicaciones", async (req, res) => {
     }
 });
 
+// PETICIONES VISTA ADMINISTRADOR
+
 // PETICION QUERY USUARIOS ACTIVOS O DESACTIVADOS
 app.get("/usuarios", async (req, res) => {
     try {
@@ -48,6 +50,31 @@ app.get("/usuarios", async (req, res) => {
         if (error) throw error;
 
         res.status(200).json(data);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// PETICION PATCH USUARIOS
+app.patch("/usuarios/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre, apellido, estado_cuenta, id_rol } = req.body;
+
+        const { data, error } = await supabase
+            .from("usuarios")
+            .update({ 
+                nombre, 
+                apellido, 
+                estado_cuenta, 
+                id_rol: parseInt(id_rol)
+            })
+            .eq("id_usuario", id)
+            .select(`id_usuario, nombre, apellido, email, estado_cuenta, id_rol, roles!id_rol (nombre_rol), fecha_registro`); 
+
+        if (error) throw error;
+
+        res.status(200).json(data[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
