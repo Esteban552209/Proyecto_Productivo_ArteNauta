@@ -4,23 +4,25 @@ import { supabase } from '../../lib/supabase';
 
 function Notificaciones({ usuario }) {
     const idUsuario = usuario?.id_usuario;
-    const idRol = Number(usuario?.id_rol);
+    const idRol = usuario?.id_rol;
 
     const [notificaciones, setNotificaciones] = useState([]);
     const [solicitudes, setSolicitudes] = useState([]);
     const [abierto, setAbierto] = useState(false);
     const ref = useRef(null);
 
-    const totalBadge = notificaciones.filter(n => !n.leida).length + solicitudes.length;
+    const totalBadge = notificaciones.length + solicitudes.length;
 
     useEffect(() => {
-        if (!idUsuario) return;
+        if (!usuario || !idUsuario) return;
         cargar();
 
         const canal = supabase
             .channel(`notif-${idUsuario}`)
             .on('postgres_changes', {
-                event: 'INSERT', schema: 'public', table: 'notificaciones',
+                event: 'INSERT',
+                schema: 'public',
+                table: 'notificaciones',
                 filter: `id_usuario=eq.${idUsuario}`,
             }, payload => {
                 setNotificaciones(prev => [payload.new, ...prev]);
@@ -30,7 +32,7 @@ function Notificaciones({ usuario }) {
         let canalSol;
         if (idRol === 3) {
             canalSol = supabase
-                .channel(`solicitudes-notif-${idUsuario}`)
+                .channel(`solicitudes-${idUsuario}`)
                 .on('postgres_changes', {
                     event: '*', schema: 'public', table: 'solicitudes',
                 }, () => cargarSolicitudes())
@@ -38,10 +40,10 @@ function Notificaciones({ usuario }) {
         }
 
         return () => {
-            supabase.removeChannel(canal);
+            if (canal) supabase.removeChannel(canal);
             if (canalSol) supabase.removeChannel(canalSol);
         };
-    }, [idUsuario]);
+    }, [idUsuario, idRol, usuario]);
 
     useEffect(() => {
         const fn = (e) => {
@@ -66,72 +68,69 @@ function Notificaciones({ usuario }) {
         const { data } = await supabase
             .from('solicitudes')
             .select('*, usuarios(nombre, apellido)')
-            .eq('tipo_solicitud', 'artista')
             .eq('estado_solicitud', 'Pendiente');
         setSolicitudes(data || []);
     }
 
     async function aprobarSolicitud(sol) {
         try {
-            await supabase.from('solicitudes')
+            // 1. Cambiar estado solicitud
+            const { error: e1 } = await supabase
+                .from('solicitudes')
                 .update({ estado_solicitud: 'Aceptada' })
                 .eq('id_solicitud', sol.id_solicitud);
+            if (e1) throw e1;
 
-            await supabase.from('usuarios')
+            // 2. Cambiar rol del usuario a Artista (2)
+            const { error: e2 } = await supabase
+                .from('usuarios')
                 .update({ id_rol: 2 })
                 .eq('id_usuario', sol.id_usuario);
+            if (e2) throw e2;
 
-            // ← fix: agregar descripcion para evitar 400
-            await supabase.from('notificaciones').insert({
-                id_usuario:         sol.id_usuario,
-                asunto:             '¡Tu solicitud para ser artista fue aprobada!',
-                descripcion:        'Ya puedes subir tus obras en ArteNauta. ¡Bienvenido!',
-                tipo_notificacion:  'solicitud_aprobada',
-                leida:              false,
-                fecha_notificacion: new Date().toISOString(),
-            });
+            // 3. Notificar al usuario — solo columnas que existen en la tabla
+            const { error: e3 } = await supabase
+                .from('notificaciones')
+                .insert({
+                    id_usuario:         sol.id_usuario,
+                    asunto:             '¡Tu solicitud para ser artista fue aprobada!',
+                    tipo_notificacion:  'solicitud_aprobada',
+                    fecha_notificacion: new Date().toISOString(),
+                });
+            if (e3) throw e3;
 
-            // Quitar de la lista inmediatamente
             setSolicitudes(prev => prev.filter(s => s.id_solicitud !== sol.id_solicitud));
-
-            Swal.fire({ icon: 'success', title: '¡Solicitud aprobada!', confirmButtonColor: '#0891b2', timer: 2000, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'Solicitud aprobada', confirmButtonColor: '#0891b2', timer: 2000, showConfirmButton: false });
         } catch (e) {
-            console.error(e);
+            console.error('Error aprobando:', e);
+            Swal.fire({ icon: 'error', title: 'Error', text: e.message, confirmButtonColor: '#0891b2' });
         }
     }
 
     async function rechazarSolicitud(sol) {
         try {
-            await supabase.from('solicitudes')
+            const { error: e1 } = await supabase
+                .from('solicitudes')
                 .update({ estado_solicitud: 'Rechazada' })
                 .eq('id_solicitud', sol.id_solicitud);
+            if (e1) throw e1;
 
-            // ← fix: agregar descripcion para evitar 400
-            await supabase.from('notificaciones').insert({
-                id_usuario:         sol.id_usuario,
-                asunto:             'Tu solicitud para ser artista no fue aprobada.',
-                descripcion:        'Puedes volver a intentarlo más adelante desde tu perfil.',
-                tipo_notificacion:  'solicitud_rechazada',
-                leida:              false,
-                fecha_notificacion: new Date().toISOString(),
-            });
+            const { error: e2 } = await supabase
+                .from('notificaciones')
+                .insert({
+                    id_usuario:         sol.id_usuario,
+                    asunto:             'Tu solicitud para ser artista fue rechazada.',
+                    tipo_notificacion:  'solicitud_rechazada',
+                    fecha_notificacion: new Date().toISOString(),
+                });
+            if (e2) throw e2;
 
-            // Quitar de la lista inmediatamente
             setSolicitudes(prev => prev.filter(s => s.id_solicitud !== sol.id_solicitud));
-
             Swal.fire({ icon: 'info', title: 'Solicitud rechazada', confirmButtonColor: '#0891b2', timer: 2000, showConfirmButton: false });
         } catch (e) {
-            console.error(e);
+            console.error('Error rechazando:', e);
+            Swal.fire({ icon: 'error', title: 'Error', text: e.message, confirmButtonColor: '#0891b2' });
         }
-    }
-
-    async function marcarLeida(id) {
-        await supabase.from('notificaciones')
-            .update({ leida: true })
-            .eq('id_notificacion', id);
-        setNotificaciones(prev =>
-            prev.map(n => n.id_notificacion === id ? { ...n, leida: true } : n)
-        );
     }
 
     function tiempoRelativo(fecha) {
@@ -146,19 +145,19 @@ function Notificaciones({ usuario }) {
     }
 
     const iconos = {
-        solicitud_aprobada:  '✅',
+        solicitud_aprobada: '✅',
         solicitud_rechazada: '❌',
-        censura_obra:        '🚫',
-        advertencia:         '⚠️',
-        mensaje_admin:       '💬',
+        censura_obra: '🚫',
+        advertencia: '⚠️',
+        mensaje_admin: '💬',
     };
 
     return (
         <div className="relative" ref={ref}>
-            {/* Botón campanita */}
             <button
                 onClick={() => setAbierto(!abierto)}
                 className="relative bg-cyan-600 hover:bg-cyan-900 p-2 rounded transition"
+                title="Notificaciones"
             >
                 <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -171,7 +170,6 @@ function Notificaciones({ usuario }) {
                 )}
             </button>
 
-            {/* Dropdown */}
             {abierto && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
                     <div className="flex items-center justify-between px-4 py-3 bg-cyan-50 border-b border-cyan-100">
@@ -184,8 +182,6 @@ function Notificaciones({ usuario }) {
                     </div>
 
                     <div className="max-h-96 overflow-y-auto">
-
-                        {/* Solicitudes pendientes — solo admin */}
                         {idRol === 3 && solicitudes.length > 0 && (
                             <div className="divide-y divide-yellow-100">
                                 {solicitudes.map(sol => (
@@ -220,20 +216,15 @@ function Notificaciones({ usuario }) {
                             </div>
                         )}
 
-                        {/* Notificaciones normales */}
                         {notificaciones.length === 0 && solicitudes.length === 0 ? (
                             <div className="p-8 text-center">
                                 <div className="text-3xl mb-2">🔔</div>
                                 <p className="text-gray-400 text-sm">Sin notificaciones</p>
                             </div>
-                        ) : notificaciones.length > 0 ? (
+                        ) : (
                             <div className="divide-y divide-gray-50">
                                 {notificaciones.map(n => (
-                                    <div
-                                        key={n.id_notificacion}
-                                        onClick={() => !n.leida && marcarLeida(n.id_notificacion)}
-                                        className={`flex gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition ${!n.leida ? 'bg-cyan-50' : ''}`}
-                                    >
+                                    <div key={n.id_notificacion} className="flex gap-3 px-4 py-3 hover:bg-gray-50 transition">
                                         <span className="text-xl flex-shrink-0 mt-0.5">
                                             {iconos[n.tipo_notificacion] || '📢'}
                                         </span>
@@ -241,20 +232,14 @@ function Notificaciones({ usuario }) {
                                             <p className="text-sm font-medium text-gray-800 leading-snug">
                                                 {n.asunto}
                                             </p>
-                                            {n.descripcion && (
-                                                <p className="text-xs text-gray-500 mt-0.5">{n.descripcion}</p>
-                                            )}
                                             <span className="text-xs text-gray-400 mt-1 block">
                                                 {tiempoRelativo(n.fecha_notificacion)}
                                             </span>
                                         </div>
-                                        {!n.leida && (
-                                            <span className="w-2 h-2 bg-cyan-500 rounded-full flex-shrink-0 mt-2" />
-                                        )}
                                     </div>
                                 ))}
                             </div>
-                        ) : null}
+                        )}
                     </div>
                 </div>
             )}

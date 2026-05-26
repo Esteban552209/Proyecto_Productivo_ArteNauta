@@ -231,7 +231,7 @@ function PerfilUsuario({ usuario, setSeccion }) {
             {datosActuales?.id_rol === 1 && (
                 <div className="bg-white rounded-2xl shadow p-6 mb-6">
                     <div className="flex items-center gap-3 mb-3">
-                        <span className="text-2xl"></span>
+                        <span className="text-2xl">🎨</span>
                         <div>
                             <h3 className="font-bold text-gray-800 text-sm">¿Quieres ser Artista?</h3>
                             <p className="text-xs text-gray-400">
@@ -244,7 +244,7 @@ function PerfilUsuario({ usuario, setSeccion }) {
                         disabled={solicitando}
                         className="w-full border-2 border-dashed border-cyan-300 hover:border-cyan-500 hover:bg-cyan-50 text-cyan-600 hover:text-cyan-700 py-3 rounded-xl font-semibold transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {solicitando ? "Enviando solicitud..." : " Solicitar ser Artista"}
+                        {solicitando ? "Enviando solicitud..." : "✨ Solicitar ser Artista"}
                     </button>
                 </div>
             )}
