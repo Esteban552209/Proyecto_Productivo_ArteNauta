@@ -202,13 +202,13 @@ function Notificaciones({ usuario }) {
                                                 onClick={() => aprobarSolicitud(sol)}
                                                 className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-1.5 rounded-lg font-semibold transition"
                                             >
-                                                ✅ Aprobar
+                                                 Aprobar
                                             </button>
                                             <button
                                                 onClick={() => rechazarSolicitud(sol)}
                                                 className="flex-1 bg-red-400 hover:bg-red-500 text-white text-xs py-1.5 rounded-lg font-semibold transition"
                                             >
-                                                ❌ Rechazar
+                                                 Rechazar
                                             </button>
                                         </div>
                                     </div>
