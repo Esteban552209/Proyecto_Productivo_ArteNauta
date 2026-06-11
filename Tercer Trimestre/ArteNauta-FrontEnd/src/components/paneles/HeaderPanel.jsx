@@ -181,7 +181,7 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
                             <div className="max-h-64 overflow-y-auto">
                                 {notifPreview.length === 0 ? (
                                     <div className="p-6 text-center text-gray-400 text-sm">
-                                        <p className="text-2xl mb-1">🔔</p>
+                                        <p className="text-2xl mb-1"></p>
                                         No hay avisos nuevos
                                     </div>
                                 ) : (
@@ -189,7 +189,7 @@ function HeaderPanel({ seccion, setSeccion, setVista, onSubirArte }) {
                                         {notifPreview.map((n) => (
                                             <li key={n.id_notificacion} className="p-3 hover:bg-cyan-50 transition">
                                                 <div className="flex gap-3">
-                                                    <span className="text-xl">🔔</span>
+                                                    <span className="text-xl"></span>
                                                     <div>
                                                         <p className="text-xs font-semibold text-gray-800">{n.asunto}</p>
                                                         <p className="text-[10px] text-gray-500">

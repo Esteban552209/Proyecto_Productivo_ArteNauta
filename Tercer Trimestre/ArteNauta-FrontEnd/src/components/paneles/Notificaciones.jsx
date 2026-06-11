@@ -187,7 +187,7 @@ function Notificaciones({ usuario }) {
                                 {solicitudes.map(sol => (
                                     <div key={sol.id_solicitud} className="px-4 py-3 bg-yellow-50">
                                         <div className="flex items-start gap-2 mb-2">
-                                            <span className="text-lg">⏳</span>
+                                            <span className="text-lg"></span>
                                             <div>
                                                 <p className="text-sm font-semibold text-yellow-800">
                                                     {sol.usuarios?.nombre} {sol.usuarios?.apellido} quiere ser artista
@@ -218,7 +218,7 @@ function Notificaciones({ usuario }) {
 
                         {notificaciones.length === 0 && solicitudes.length === 0 ? (
                             <div className="p-8 text-center">
-                                <div className="text-3xl mb-2">🔔</div>
+                                <div className="text-3xl mb-2"></div>
                                 <p className="text-gray-400 text-sm">Sin notificaciones</p>
                             </div>
                         ) : (
@@ -226,7 +226,7 @@ function Notificaciones({ usuario }) {
                                 {notificaciones.map(n => (
                                     <div key={n.id_notificacion} className="flex gap-3 px-4 py-3 hover:bg-gray-50 transition">
                                         <span className="text-xl flex-shrink-0 mt-0.5">
-                                            {iconos[n.tipo_notificacion] || '📢'}
+                                            {iconos[n.tipo_notificacion] || ''}
                                         </span>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium text-gray-800 leading-snug">
