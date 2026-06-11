@@ -97,7 +97,7 @@ function SolicitarArtista() {
     if (solicitud?.estado_solicitud === "pendiente") {
         return (
             <div className="flex gap-3 items-start p-4 bg-yellow-50 border border-yellow-200 rounded-xl mt-4">
-                <span className="text-2xl">⏳</span>
+                <span className="text-2xl"></span>
                 <div>
                     <p className="font-semibold text-yellow-800">Solicitud en revisión</p>
                     <p className="text-sm text-yellow-700 mt-1">
@@ -112,7 +112,7 @@ function SolicitarArtista() {
     if (solicitud?.estado_solicitud === "rechazada") {
         return (
             <div className="flex gap-3 items-start p-4 bg-red-50 border border-red-200 rounded-xl mt-4">
-                <span className="text-2xl">❌</span>
+                <span className="text-2xl"></span>
                 <div>
                     <p className="font-semibold text-red-800">Solicitud no aprobada</p>
                     <p className="text-sm text-red-700 mt-1">Puedes volver a intentarlo.</p>
@@ -134,7 +134,7 @@ function SolicitarArtista() {
                 onClick={() => setMostrarForm(true)}
                 className="mt-4 flex items-center gap-2 px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold rounded-xl transition"
             >
-                🎨 Solicitar ser artista
+                 Solicitar ser artista
             </button>
         );
     }

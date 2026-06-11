@@ -28,7 +28,28 @@ app.get('/Muro-Publicaciones', async (req, res) => {
     }
 });
 
+<<<<<<< HEAD
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
+=======
+//
+app.get('/notificaciones/:idUsuario', async (req, res) => {
+    const { idUsuario } = req.params;
+
+    const { data, error } = await supabase
+        .from('notificaciones')
+        .select('*')
+        .eq('id_usuario', idUsuario);
+
+    if (error) {
+        return res.status(500).json(error);
+    }
+
+    res.json(data);
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {ESWADWAEAWDW
+>>>>>>> Rama-de-Bryam
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
