@@ -82,9 +82,9 @@ function Usuarios() {
                     <div class="w-1/2">
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Rol</label>
                         <select id="swal-rol" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-white">
-                            <option value="1" ${usuario.id_rol === 1 ? "selected" : ""}>Administrador</option>
+                            <option value="3" ${usuario.id_rol === 3 ? "selected" : ""}>Administrador</option>
                             <option value="2" ${usuario.id_rol === 2 ? "selected" : ""}>Artista</option>
-                            <option value="3" ${usuario.id_rol === 3 ? "selected" : ""}>Usuario Final</option>
+                            <option value="1" ${usuario.id_rol === 1 ? "selected" : ""}>Usuario Final</option>
                         </select>
                     </div>
                 </div>
@@ -248,8 +248,8 @@ function Usuarios() {
                                                 ? "bg-cyan-100 text-cyan-800"
                                                 : u.roles?.nombre_rol ===
                                                     "Artista"
-                                                  ? "bg-purple-100 text-purple-800"
-                                                  : "bg-gray-100 text-green-600"
+                                                ? "bg-purple-100 text-purple-800"
+                                                : "bg-gray-100 text-green-600"
                                         }`}
                                     >
                                         {u.roles?.nombre_rol}
