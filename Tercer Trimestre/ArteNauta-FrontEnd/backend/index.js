@@ -1,34 +1,19 @@
-import express from 'express';
-import cors from 'cors';
-import { supabase } from './config/supabase.js';
+import express from "express";
+import cors from "cors";
+
+// 1. Importamos nuestras rutas
+import publicacionesRoutes from "./routes/publicaciones.js";
+import usuariosRoutes from "./routes/usuarios.js";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.get('/Muro-Publicaciones', async (req, res) => {
-    try {
-        const { data, error } = await supabase
-            .from('publicaciones')
-            .select(`
-                *,
-                usuarios (
-                    id_usuario,
-                    nombre,
-                    email
-                )
-            `);
-
-        if (error) throw error;
-
-        res.status(200).json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+app.use(publicacionesRoutes);
+app.use(usuariosRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`Servidor de ArteNauta corriendo en el puerto ${PORT}`);
 });
