@@ -9,8 +9,10 @@ import PanelAdmin from "./components/paneles/PanelAdmin";
 import PanelArtista from "./components/paneles/PanelArtista";
 import PanelUsuario from "./components/paneles/PanelUsuario";
 import { supabase } from "./lib/supabase";
+import Preloader from "./components/Preloader";
 
 function App() {
+    const [showPreloader, setShowPreloader] = useState(true);
     const [pagina, setPagina] = useState("home");
     const [vista, setVista] = useState(() => {
         const usuarioGuardado = localStorage.getItem("usuario");
@@ -51,6 +53,8 @@ function App() {
 
         return () => supabase.removeChannel(canal);
     }, []);
+
+    if (showPreloader) return <Preloader onComplete={() => setShowPreloader(false)} />;
 
     if (vista === 3) return <PanelAdmin setVista={setVista} />;
     if (vista === 2) return <PanelArtista setVista={setVista} />;
