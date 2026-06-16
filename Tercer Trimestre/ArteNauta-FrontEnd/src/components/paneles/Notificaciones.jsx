@@ -2,9 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { supabase } from '../../lib/supabase';
 
-function Notificaciones({ usuario }) {
+const API = 'http://localhost:3000';
+
+function Notificaciones({ usuario, setVista }) {
     const idUsuario = usuario?.id_usuario;
-    const idRol = usuario?.id_rol;
+    const idRol = Number(usuario?.id_rol);
+    const token = localStorage.getItem('token');
 
     const [notificaciones, setNotificaciones] = useState([]);
     const [solicitudes, setSolicitudes] = useState([]);
@@ -13,10 +16,17 @@ function Notificaciones({ usuario }) {
 
     const totalBadge = notificaciones.length + solicitudes.length;
 
+    // ── Headers reutilizables ──────────────────────────
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+    };
+
     useEffect(() => {
-        if (!usuario || !idUsuario) return;
+        if (!idUsuario) return;
         cargar();
 
+        // Realtime — solo para recibir notificaciones nuevas en vivo
         const canal = supabase
             .channel(`notif-${idUsuario}`)
             .on('postgres_changes', {
@@ -29,6 +39,7 @@ function Notificaciones({ usuario }) {
             })
             .subscribe();
 
+        // Realtime solicitudes (solo admin)
         let canalSol;
         if (idRol === 3) {
             canalSol = supabase
@@ -39,11 +50,37 @@ function Notificaciones({ usuario }) {
                 .subscribe();
         }
 
+        // Realtime cambio de rol
+        const canalRol = supabase
+            .channel(`rol-usuario-${idUsuario}`)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'usuarios',
+                filter: `id_usuario=eq.${idUsuario}`,
+            }, async (payload) => {
+                const nuevoRol = Number(payload.new.id_rol);
+                const usuarioActual = JSON.parse(localStorage.getItem('usuario'));
+                if (nuevoRol !== Number(usuarioActual?.id_rol)) {
+                    localStorage.setItem('usuario', JSON.stringify({ ...usuarioActual, id_rol: nuevoRol }));
+                    await Swal.fire({
+                        icon: 'success',
+                        title: '🎉 ¡Ahora eres Artista!',
+                        text: 'Serás redirigido a tu nuevo panel.',
+                        confirmButtonColor: '#0891b2',
+                        confirmButtonText: 'Ir a mi panel',
+                    });
+                    setVista(nuevoRol);
+                }
+            })
+            .subscribe();
+
         return () => {
-            if (canal) supabase.removeChannel(canal);
+            supabase.removeChannel(canal);
+            supabase.removeChannel(canalRol);
             if (canalSol) supabase.removeChannel(canalSol);
         };
-    }, [idUsuario, idRol, usuario]);
+    }, [idUsuario, idRol]);
 
     useEffect(() => {
         const fn = (e) => {
@@ -53,82 +90,69 @@ function Notificaciones({ usuario }) {
         return () => document.removeEventListener('mousedown', fn);
     }, []);
 
+    // ── GET notificaciones → backend ──────────────────
     async function cargar() {
-        const { data } = await supabase
-            .from('notificaciones')
-            .select('*')
-            .eq('id_usuario', idUsuario)
-            .order('fecha_notificacion', { ascending: false })
-            .limit(20);
-        if (data) setNotificaciones(data);
+        try {
+            const res = await fetch(`${API}/notificaciones?id_usuario=${idUsuario}`, { headers });
+            if (!res.ok) throw new Error('Error al cargar notificaciones');
+            const data = await res.json();
+            setNotificaciones(data);
+        } catch (e) {
+            console.error(e);
+        }
         if (idRol === 3) cargarSolicitudes();
     }
 
+    // ── GET solicitudes → backend ─────────────────────
     async function cargarSolicitudes() {
-        const { data } = await supabase
-            .from('solicitudes')
-            .select('*, usuarios(nombre, apellido)')
-            .eq('estado_solicitud', 'Pendiente');
-        setSolicitudes(data || []);
+        try {
+            const res = await fetch(`${API}/notificaciones/solicitudes`, { headers });
+            if (!res.ok) throw new Error('Error al cargar solicitudes');
+            const data = await res.json();
+            setSolicitudes(data);
+        } catch (e) {
+            console.error(e);
+        }
     }
 
+    // ── PATCH aprobar → backend ───────────────────────
     async function aprobarSolicitud(sol) {
         try {
-            // 1. Cambiar estado solicitud
-            const { error: e1 } = await supabase
-                .from('solicitudes')
-                .update({ estado_solicitud: 'Aceptada' })
-                .eq('id_solicitud', sol.id_solicitud);
-            if (e1) throw e1;
-
-            // 2. Cambiar rol del usuario a Artista (2)
-            const { error: e2 } = await supabase
-                .from('usuarios')
-                .update({ id_rol: 2 })
-                .eq('id_usuario', sol.id_usuario);
-            if (e2) throw e2;
-
-            // 3. Notificar al usuario — solo columnas que existen en la tabla
-            const { error: e3 } = await supabase
-                .from('notificaciones')
-                .insert({
-                    id_usuario:         sol.id_usuario,
-                    asunto:             '¡Tu solicitud para ser artista fue aprobada!',
-                    tipo_notificacion:  'solicitud_aprobada',
-                    fecha_notificacion: new Date().toISOString(),
-                });
-            if (e3) throw e3;
+            const res = await fetch(
+                `${API}/notificaciones/solicitudes/${sol.id_solicitud}/aprobar`,
+                {
+                    method: 'PATCH',
+                    headers,
+                    body: JSON.stringify({ id_usuario: sol.id_usuario }),
+                }
+            );
+            if (!res.ok) throw new Error('Error al aprobar');
 
             setSolicitudes(prev => prev.filter(s => s.id_solicitud !== sol.id_solicitud));
-            Swal.fire({ icon: 'success', title: 'Solicitud aprobada', confirmButtonColor: '#0891b2', timer: 2000, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: '¡Solicitud aprobada!', confirmButtonColor: '#0891b2', timer: 2000, showConfirmButton: false });
         } catch (e) {
-            console.error('Error aprobando:', e);
+            console.error(e);
             Swal.fire({ icon: 'error', title: 'Error', text: e.message, confirmButtonColor: '#0891b2' });
         }
     }
 
+    // ── PATCH rechazar → backend ──────────────────────
     async function rechazarSolicitud(sol) {
         try {
-            const { error: e1 } = await supabase
-                .from('solicitudes')
-                .update({ estado_solicitud: 'Rechazada' })
-                .eq('id_solicitud', sol.id_solicitud);
-            if (e1) throw e1;
-
-            const { error: e2 } = await supabase
-                .from('notificaciones')
-                .insert({
-                    id_usuario:         sol.id_usuario,
-                    asunto:             'Tu solicitud para ser artista fue rechazada.',
-                    tipo_notificacion:  'solicitud_rechazada',
-                    fecha_notificacion: new Date().toISOString(),
-                });
-            if (e2) throw e2;
+            const res = await fetch(
+                `${API}/notificaciones/solicitudes/${sol.id_solicitud}/rechazar`,
+                {
+                    method: 'PATCH',
+                    headers,
+                    body: JSON.stringify({ id_usuario: sol.id_usuario }),
+                }
+            );
+            if (!res.ok) throw new Error('Error al rechazar');
 
             setSolicitudes(prev => prev.filter(s => s.id_solicitud !== sol.id_solicitud));
             Swal.fire({ icon: 'info', title: 'Solicitud rechazada', confirmButtonColor: '#0891b2', timer: 2000, showConfirmButton: false });
         } catch (e) {
-            console.error('Error rechazando:', e);
+            console.error(e);
             Swal.fire({ icon: 'error', title: 'Error', text: e.message, confirmButtonColor: '#0891b2' });
         }
     }
@@ -145,11 +169,11 @@ function Notificaciones({ usuario }) {
     }
 
     const iconos = {
-        solicitud_aprobada: '✅',
+        solicitud_aprobada:  '✅',
         solicitud_rechazada: '❌',
-        censura_obra: '🚫',
-        advertencia: '⚠️',
-        mensaje_admin: '💬',
+        censura_obra:        '🚫',
+        advertencia:         '⚠️',
+        mensaje_admin:       '💬',
     };
 
     return (
@@ -182,12 +206,13 @@ function Notificaciones({ usuario }) {
                     </div>
 
                     <div className="max-h-96 overflow-y-auto">
+                        {/* Solicitudes pendientes — solo admin */}
                         {idRol === 3 && solicitudes.length > 0 && (
                             <div className="divide-y divide-yellow-100">
                                 {solicitudes.map(sol => (
                                     <div key={sol.id_solicitud} className="px-4 py-3 bg-yellow-50">
                                         <div className="flex items-start gap-2 mb-2">
-                                            <span className="text-lg"></span>
+                                            <span className="text-lg">⏳</span>
                                             <div>
                                                 <p className="text-sm font-semibold text-yellow-800">
                                                     {sol.usuarios?.nombre} {sol.usuarios?.apellido} quiere ser artista
@@ -202,13 +227,13 @@ function Notificaciones({ usuario }) {
                                                 onClick={() => aprobarSolicitud(sol)}
                                                 className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-1.5 rounded-lg font-semibold transition"
                                             >
-                                                 Aprobar
+                                                ✅ Aprobar
                                             </button>
                                             <button
                                                 onClick={() => rechazarSolicitud(sol)}
                                                 className="flex-1 bg-red-400 hover:bg-red-500 text-white text-xs py-1.5 rounded-lg font-semibold transition"
                                             >
-                                                 Rechazar
+                                                ❌ Rechazar
                                             </button>
                                         </div>
                                     </div>
@@ -216,17 +241,21 @@ function Notificaciones({ usuario }) {
                             </div>
                         )}
 
-                        {notificaciones.length === 0 && solicitudes.length === 0 ? (
+                        {/* Vacío */}
+                        {notificaciones.length === 0 && solicitudes.length === 0 && (
                             <div className="p-8 text-center">
-                                <div className="text-3xl mb-2"></div>
+                                <div className="text-3xl mb-2">🔔</div>
                                 <p className="text-gray-400 text-sm">Sin notificaciones</p>
                             </div>
-                        ) : (
+                        )}
+
+                        {/* Notificaciones normales */}
+                        {notificaciones.length > 0 && (
                             <div className="divide-y divide-gray-50">
                                 {notificaciones.map(n => (
                                     <div key={n.id_notificacion} className="flex gap-3 px-4 py-3 hover:bg-gray-50 transition">
                                         <span className="text-xl flex-shrink-0 mt-0.5">
-                                            {iconos[n.tipo_notificacion] || ''}
+                                            {iconos[n.tipo_notificacion] || '📢'}
                                         </span>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium text-gray-800 leading-snug">
