@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 
-// 1. Importamos nuestras rutas
+import authRoutes from "./routes/auth.js"
 import publicacionesRoutes from "./routes/publicaciones.js";
 import usuariosRoutes from "./routes/usuarios.js";
 
@@ -10,6 +10,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use(authRoutes);
 app.use(publicacionesRoutes);
 app.use(usuariosRoutes);
 

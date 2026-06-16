@@ -1,10 +1,11 @@
 import express from "express";
 import { supabase } from "../config/supabase.js";
+import { verificarToken } from "../middlewares/verificarToken.js";
 
 const router = express.Router();
 
 // PETICIÓN QUERY USUARIOS ACTIVOS O DESACTIVADOS
-router.get("/usuarios", async (req, res) => {
+router.get("/usuarios", verificarToken, async (req, res) => {
     try {
         const estadoQuery = req.query.estado;
 
@@ -30,7 +31,7 @@ router.get("/usuarios", async (req, res) => {
 });
 
 // PETICIÓN PATCH USUARIOS
-router.patch("/usuarios/:id", async (req, res) => {
+router.patch("/usuarios/:id", verificarToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { nombre, apellido, estado_cuenta, id_rol } = req.body;

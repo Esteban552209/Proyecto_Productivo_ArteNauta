@@ -8,11 +8,42 @@ function Usuarios() {
     const [filtro, setFiltro] = useState("todos");
 
     const obtenerUsuarios = async () => {
+        const token = localStorage.getItem("token");
+
         try {
             const res = await fetch(
                 `${API_LOCAL_USUARIOS}/usuarios?estado=${filtro}`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                },
             );
+
+            if (res.status === 401) {
+                console.log("Sesión expirada");
+
+                // Borramos los datos locales
+                localStorage.removeItem("token");
+                localStorage.removeItem("usuario");
+
+                Swal.fire({
+                    icon: "warning",
+                    title: "Sesión Expirada",
+                    text: "Tu sesión ha terminado por seguridad. Vuelve a ingresar.",
+                    confirmButtonColor: "#0891b2",
+                }).then(() => {
+                    window.location.reload();
+                });
+
+                return;
+            }
+
             if (!res.ok) throw new Error("Error al obtener los usuarios");
+
+            // Si todo sale bien (status 200), guardamos los datos
             const data = await res.json();
             setUsuarios(data);
         } catch (err) {
@@ -25,52 +56,20 @@ function Usuarios() {
         obtenerUsuarios();
     }, [filtro]);
 
-    const handleEliminar = async (url, id, setter, lista, idField = "id") => {
-        const confirmacion = await Swal.fire({
-            title: "¿Eliminar?",
-            text: "Esta acción no se puede deshacer",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#0891b2",
-            confirmButtonText: "Sí, eliminar",
-            cancelButtonText: "Cancelar",
-        });
-
-        if (!confirmacion.isConfirmed) return;
-
-        try {
-            const res = await fetch(`${url}/${id}`, { method: "DELETE" });
-            if (!res.ok) throw new Error("No se pudo eliminar");
-            setter(lista.filter((item) => item[idField] !== id));
-            Swal.fire({
-                title: "Eliminado",
-                icon: "success",
-                timer: 1500,
-                showConfirmButton: false,
-            });
-        } catch (err) {
-            Swal.fire("Error", err.message, "error");
-        }
-    };
-
     const handleEditar = async (usuario) => {
         const { value: formValues } = await Swal.fire({
             title: '<h3 class="text-2xl font-bold text-cyan-800">Editar Usuario</h3>',
             html: `
             <div class="flex flex-col gap-4 text-left mt-4 px-2">
-                <!-- Campo Nombre -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">Nombre</label>
                     <input id="swal-nombre" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-shadow" value="${usuario.nombre}">
                 </div>
                 
-                <!-- Campo Apellido -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">Apellido</label>
                     <input id="swal-apellido" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-shadow" value="${usuario.apellido}">
                 </div>
-                <!-- Fila para Estado y Rol (uno al lado del otro) -->
                 <div class="flex gap-4">
                     <div class="w-1/2">
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Estado</label>
@@ -95,20 +94,19 @@ function Usuarios() {
             confirmButtonText: "Guardar Cambios",
             cancelButtonText: "Cancelar",
             confirmButtonColor: "#0891b2",
-            // 2. Extraemos los valores de los inputs cuando el admin le da a Guardar
             preConfirm: () => {
                 return {
                     nombre: document.getElementById("swal-nombre").value,
                     apellido: document.getElementById("swal-apellido").value,
-                    estado_cuenta:
-                        document.getElementById("swal-estado").value === "true",
+                    estado_cuenta: document.getElementById("swal-estado").value === "true",
                     id_rol: document.getElementById("swal-rol").value,
                 };
             },
         });
 
-        // 3. Si el usuario le dio a "Guardar" y tenemos los valores, hacemos el PATCH
         if (formValues) {
+            const token = localStorage.getItem("token");
+
             try {
                 const res = await fetch(
                     `${API_LOCAL_USUARIOS}/usuarios/${usuario.id_usuario}`,
@@ -116,22 +114,33 @@ function Usuarios() {
                         method: "PATCH",
                         headers: {
                             "Content-Type": "application/json",
+                            "Authorization": `Bearer ${token}`, 
                         },
                         body: JSON.stringify(formValues),
                     },
                 );
 
-                if (!res.ok)
-                    throw new Error("No se pudo actualizar el usuario");
+                if (res.status === 401) {
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("usuario");
+                    Swal.fire({
+                        icon: "warning",
+                        title: "Sesión Expirada",
+                        text: "Tu sesión ha terminado por seguridad. Vuelve a ingresar.",
+                        confirmButtonColor: "#0891b2",
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                    return;
+                }
+
+                if (!res.ok) throw new Error("No se pudo actualizar el usuario");
 
                 const usuarioActualizado = await res.json();
 
-                // 4. Actualizamos el estado de React para que la tabla se refresque sola
                 setUsuarios(
                     usuarios.map((u) =>
-                        u.id_usuario === usuario.id_usuario
-                            ? usuarioActualizado
-                            : u,
+                        u.id_usuario === usuario.id_usuario ? usuarioActualizado : u,
                     ),
                 );
 
@@ -199,7 +208,7 @@ function Usuarios() {
                             </th>
                             <th className="text-left px-6 py-3">Estado</th>
                             <th className="text-left px-6 py-3">Rol</th>
-                            <th className="text px-6 py-3">Gestionar</th>
+                            <th className="text px-6 py-3">Editar</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -248,8 +257,8 @@ function Usuarios() {
                                                 ? "bg-cyan-100 text-cyan-800"
                                                 : u.roles?.nombre_rol ===
                                                     "Artista"
-                                                ? "bg-purple-100 text-purple-800"
-                                                : "bg-gray-100 text-green-600"
+                                                    ? "bg-purple-100 text-purple-800"
+                                                    : "bg-gray-100 text-green-600"
                                         }`}
                                     >
                                         {u.roles?.nombre_rol}
@@ -271,33 +280,6 @@ function Usuarios() {
                                         >
                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                        </svg>
-                                    </button>
-                                    <button
-                                        onClick={() =>
-                                            handleEliminar(
-                                                `${API_LOCAL_USUARIOS}/usuarios`,
-                                                u.id_usuario, // Recuerda usar id_usuario aquí también
-                                                setUsuarios,
-                                                usuarios,
-                                                "id_usuario", // Le pasamos el nombre del campo ID a tu función
-                                            )
-                                        }
-                                        className="text-red-400 hover:text-red-600 transition"
-                                        title="Eliminar usuario"
-                                    >
-                                        <svg
-                                            width="18"
-                                            height="18"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                        >
-                                            <polyline points="3 6 5 6 21 6" />
-                                            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
-                                            <path d="M10 11v6M14 11v6" />
-                                            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
                                         </svg>
                                     </button>
                                 </td>
