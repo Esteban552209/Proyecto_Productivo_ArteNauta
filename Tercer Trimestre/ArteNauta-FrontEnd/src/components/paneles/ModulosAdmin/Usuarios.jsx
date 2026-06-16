@@ -43,7 +43,6 @@ function Usuarios() {
 
             if (!res.ok) throw new Error("Error al obtener los usuarios");
 
-            // Si todo sale bien (status 200), guardamos los datos
             const data = await res.json();
             setUsuarios(data);
         } catch (err) {
