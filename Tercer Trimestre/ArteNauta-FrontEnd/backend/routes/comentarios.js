@@ -1,10 +1,11 @@
 import express from "express";
 import { supabase } from "../config/supabase.js";
+import { verificarToken } from "../middlewares/verificarToken.js";
 
 const router = express.Router();
 
 // GET: Obtener comentarios de una publicación específica
-router.get("/comentarios/:id_publicacion", async (req, res) => {
+router.get("/comentarios/:id_publicacion", verificarToken, async (req, res) => {
     try {
         const { id_publicacion } = req.params;
 
@@ -29,7 +30,7 @@ router.get("/comentarios/:id_publicacion", async (req, res) => {
 });
 
 // POST: Guardar un nuevo comentario
-router.post("/comentarios", async (req, res) => {
+router.post("/comentarios", verificarToken, async (req, res) => {
     try {
         const { id_publicacion, id_usuario_final, contenido } = req.body;
 

@@ -1,10 +1,11 @@
 import express from "express";
 import { supabase } from "../config/supabase.js";
+import { verificarToken } from "../middlewares/verificarToken.js";
 
 const router = express.Router();
 
 // GET: Muro de publicaciones con datos del artista (Ordenado por fecha descendente)
-router.get("/Muro-Publicaciones", async (req, res) => {
+router.get("/Muro-Publicaciones", verificarToken, async (req, res) => {
     try {
         const { data, error } = await supabase
             .from("publicaciones")
@@ -27,7 +28,7 @@ router.get("/Muro-Publicaciones", async (req, res) => {
 });
 
 // GET: Obtener publicaciones de un artista específico
-router.get("/publicaciones/artista/:id_artista", async (req, res) => {
+router.get("/publicaciones/artista/:id_artista", verificarToken, async (req, res) => {
     try {
         const { id_artista } = req.params;
         const { data, error } = await supabase
@@ -45,7 +46,7 @@ router.get("/publicaciones/artista/:id_artista", async (req, res) => {
 });
 
 // POST: Crear una nueva publicación
-router.post("/publicaciones", async (req, res) => {
+router.post("/publicaciones", verificarToken, async (req, res) => {
     try {
         const { titulo, contenido, descripcion, id_usuario_artista } = req.body;
 
@@ -86,7 +87,7 @@ router.post("/publicaciones", async (req, res) => {
 });
 
 // DELETE: Eliminar una publicación
-router.delete("/publicaciones/:id", async (req, res) => {
+router.delete("/publicaciones/:id", verificarToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { error } = await supabase

@@ -8,6 +8,8 @@ const API_USER = "741146561";
 const API_SECRET = "RD3oJvHzcHqNVqoYkBxT5vmwBDTbC2DD";
 const MODELS = "nudity-2.1,weapon,alcohol,recreational_drug,gore-2.0,violence,self-harm";
 
+const IdArtista = localStorage.getItem("id_usuario");
+
 export default function FormPublicaciones({
     onNuevaPublicacion,
     onClose,
@@ -20,7 +22,8 @@ export default function FormPublicaciones({
     const [form, setForm] = useState({
         Titulo: '',
         Descripcion: '',
-        contenido: '' // Usaremos este de forma consistente
+        contenido: '',
+        id_usuario: '' // Usaremos este de forma consistente
     });
 
     const [loading, setLoading] = useState(false);
@@ -98,6 +101,8 @@ export default function FormPublicaciones({
     // SUBMIT
     // =========================
     const handleSubmit = async () => {
+        const token = localStorage.getItem("token")
+
         if (!form.Titulo.trim() || !form.Descripcion.trim()) {
             setError('El título y la descripción son obligatorios');
             return;
@@ -127,12 +132,13 @@ export default function FormPublicaciones({
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                     Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     titulo: form.Titulo,
                     descripcion: form.Descripcion,
                     contenido: form.contenido,
-                    id_usuario_artista: idArtistaActivo
+                    id_usuario_artista: get.IdArtista
                 }),
             });
 

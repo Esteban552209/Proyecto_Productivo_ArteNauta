@@ -1,31 +1,33 @@
-import { useState } from "react"
-import { supabase } from "../lib/supabase"
+import { useState } from "react";
 import Swal from "sweetalert2";
 
 function LoginModal({ isOpen, onClose, setVista }) {
     const [correo, setCorreo] = useState("");
     const [password, setPassword] = useState("");
-    if (!isOpen) return null
+    
+    if (!isOpen) return null;
 
     const manejarLogin = async (e) => {
         e.preventDefault();
 
         try {
-            const { data: usuarioEncontrado, error } = await supabase
-                .from("usuarios")
-                .select("*")
-                .eq("email", correo)
-                .eq("clave", password)
-                .maybeSingle();
+            const respuesta = await fetch("http://localhost:3000/auth/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email: correo, password: password }),
+            });
 
-            if (error) throw error;
-            
-            if (usuarioEncontrado) {
-                localStorage.setItem("usuario", JSON.stringify(usuarioEncontrado));
-                const token = `jwt-${usuarioEncontrado.id_rol}--${Date.now()}`;
-                localStorage.setItem("token", token);
+            const data = await respuesta.json();
+
+            if (respuesta.ok) {
+                localStorage.setItem("usuario", JSON.stringify(data.usuario));
+                localStorage.setItem("token", data.token);
+                
                 onClose();
-                setVista(usuarioEncontrado.id_rol); // Cambiado a id_rol
+                setVista(data.usuario.id_rol);
+                
                 Swal.fire({
                     icon: "success",
                     title: "¡Bienvenido de nuevo!",
@@ -37,7 +39,7 @@ function LoginModal({ isOpen, onClose, setVista }) {
                     showConfirmButton: false,
                 });
             } else {
-                console.log("datos incorrectos");
+                console.log(data.mensaje);
                 Swal.fire({
                     icon: "error",
                     title: "Ups...",
@@ -55,7 +57,8 @@ function LoginModal({ isOpen, onClose, setVista }) {
                 confirmButtonColor: "#0891b2",
             });
         }
-    }
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={onClose}>
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 relative animate-fadeIn" onClick={(e) => e.stopPropagation()}>
@@ -76,7 +79,7 @@ function LoginModal({ isOpen, onClose, setVista }) {
                             </label>
                             <input type="email" placeholder="Correo Electronico" className="text-black w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" value={correo} onChange={(e) => setCorreo(e.target.value)} />
                         </div>
-                        <div>
+                        <div className="mt-4">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Contraseña
                             </label>
@@ -98,7 +101,7 @@ function LoginModal({ isOpen, onClose, setVista }) {
                 </div>
             </div>
         </div>
-    )
+    );
 }
 
-export default LoginModal
+export default LoginModal;

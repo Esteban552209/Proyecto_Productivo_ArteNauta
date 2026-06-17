@@ -37,12 +37,20 @@ export default function PublicacionesCom({ item }) {
     // ABRIR DETALLE Y COMENTARIOS
     // =========================
     const abrirDetalleModal = async () => {
+        const token = localStorage.getItem("token")
         setShowDetalleModal(true);
         setLoadingCom(true);
         setErrorCom(null);
 
         try {
-            const res = await fetch(`http://localhost:3000/comentarios/${postId}`);
+            const res = await fetch(`http://localhost:3000/comentarios/${postId}`, {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                },
+);
             if (!res.ok) throw new Error("Error al obtener los comentarios desde el servidor.");
             const data = await res.json();
             setComentarios(data || []);
@@ -57,6 +65,7 @@ export default function PublicacionesCom({ item }) {
     // ENVIAR NUEVO COMENTARIO
     // =========================
     const enviarComentario = async (e) => {
+        const token = localStorage.getItem("token")
         e.preventDefault();
         if (!nuevoComentario.trim()) return;
 
@@ -76,6 +85,7 @@ export default function PublicacionesCom({ item }) {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                     id_publicacion: postId,
