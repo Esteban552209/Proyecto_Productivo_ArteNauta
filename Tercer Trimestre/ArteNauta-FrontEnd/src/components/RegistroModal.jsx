@@ -199,7 +199,7 @@ function LoginModal({ isOpen, onClose }) {
                     </button>
                     <p className="text-center text-sm text-gray-500">
                         ¿Ya tienes una cuenta?{" "}
-                        <span className="text-cyan-600 hover:underline cursor-pointer font-medium">
+                        <span className="text-cyan-600 hover:underline cursor-pointer font-medium cursor pointer">
                             Inicia sesion
                         </span>
                     </p>

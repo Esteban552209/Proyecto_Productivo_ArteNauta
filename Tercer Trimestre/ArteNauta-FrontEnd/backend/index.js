@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth.js"
 import publicacionesRoutes from "./routes/publicaciones.js";
 import usuariosRoutes from "./routes/usuarios.js";
 import notificacionesRoutes from "./routes/norificaciones.js";
+import comentariosRoutes from "./routes/comentarios.js";
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(notificacionesRoutes);
 app.use(authRoutes);
 app.use(publicacionesRoutes);
 app.use(usuariosRoutes);
+app.use(comentariosRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
