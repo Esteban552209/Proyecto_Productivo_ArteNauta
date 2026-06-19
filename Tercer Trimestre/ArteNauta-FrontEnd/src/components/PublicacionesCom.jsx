@@ -10,12 +10,8 @@ export default function PublicacionesCom({ item }) {
     const [errorCom, setErrorCom] = useState(null);
     const [nuevoComentario, setNuevoComentario] = useState("");
     const [submittingCom, setSubmittingCom] = useState(false);
-
-    // Obtener información del usuario logueado en la sesión
     const usuarioGuardado = localStorage.getItem("usuario");
     const usuarioLogueado = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
-
-    // Normalización de variables debido a posibles discrepancias de mayúsculas en Supabase / JSON-Server
     const tituloStr = item.titulo || item.Titulo || "Sin título";
     const descripcionStr = item.descripcion || item.Descripcion || "Sin descripción.";
     const contenidoUrl = item.contenido || item.Contenido || "";
