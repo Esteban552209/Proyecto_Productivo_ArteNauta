@@ -1,6 +1,5 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-// Ajusta la ruta de tu config de supabase si es necesario
 import { supabase } from "../config/supabase.js"; 
 
 const router = express.Router();
@@ -28,7 +27,7 @@ router.post("/auth/login", async (req, res) => {
         };
 
         const secretKey = process.env.JWT_SECRET || "mi_clave_super_secreta_desarrollo";
-        const token = jwt.sign(payload, secretKey, { expiresIn: "1h" });
+        const token = jwt.sign(payload, secretKey, { expiresIn: "5h" });
 
         res.status(200).json({
             mensaje: "Inicio de sesión exitoso",

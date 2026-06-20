@@ -1,60 +1,43 @@
-import { useState } from 'react';
-import axios from 'axios';
-import { supabase } from '../lib/supabase';
+import { useState } from "react";
+import axios from "axios";
 
 // =========================
 // SIGHTENGINE
 // =========================
-
 const API_USER = "741146561";
-
 const API_SECRET = "RD3oJvHzcHqNVqoYkBxT5vmwBDTbC2DD";
-
 const MODELS =
     "nudity-2.1,weapon,alcohol,recreational_drug,gore-2.0,violence,self-harm";
-
-export default function FormPublicaciones({
-    onNuevaPublicacion,
-    onClose,
-    idArtistaActivo
-}) {
-
+export default function FormPublicaciones({ onNuevaPublicacion, onClose }) {
     // =========================
-    // ESTADOS
+    // ESTADOS (Todo unificado a minúsculas/estructuras limpias)
     // =========================
-
     const [form, setForm] = useState({
-        Titulo: '',
-        Descripcion: '',
-        contenido: ''
+        Titulo: "",
+        Descripcion: "",
+        contenido: "",
+        id_usuario: "",
     });
 
     const [loading, setLoading] = useState(false);
-
     const [exito, setExito] = useState(false);
-
     const [error, setError] = useState(null);
 
     // =========================
     // HANDLE CHANGE
     // =========================
-
     const handleChange = (e) => {
-
         setForm({
             ...form,
-            [e.target.name]: e.target.value
+            [e.target.name]: e.target.value,
         });
     };
 
     // =========================
     // VALIDAR IMAGEN
     // =========================
-
     const validarImagen = async (urlImagen) => {
-
         try {
-
             const response = await axios.get(
                 "https://api.sightengine.com/1.0/check.json",
                 {
@@ -64,59 +47,44 @@ export default function FormPublicaciones({
                         api_user: API_USER,
                         api_secret: API_SECRET,
                     },
-                }
+                },
             );
 
             const data = response.data;
-
             console.log("Resultado Sightengine:", data);
+
+            // Control de errores de la propia API de Sightengine (por si la URL está rota o no es pública)
+            if (data.status === "failure") {
+                return {
+                    segura: false,
+                    motivo: `Error de Sightengine: ${data.error.message}`,
+                };
+            }
 
             // =========================
             // VALIDACIONES
             // =========================
-
-            const nudity =
-                data.nudity?.raw ?? 0;
-
-            const violence =
-                data.violence?.prob ?? 0;
-
-            const gore =
-                data.gore?.prob ?? 0;
-
-            const drugs =
-                data.recreational_drug?.prob ?? 0;
+            const nudity = data.nudity?.raw ?? 0;
+            const violence = data.violence?.prob ?? 0;
+            const gore = data.gore?.prob ?? 0;
+            const drugs = data.recreational_drug?.prob ?? 0;
 
             // =========================
             // BLOQUEAR CONTENIDO
             // =========================
-
-            if (
-                nudity > 0.5 ||
-                violence > 0.5 ||
-                gore > 0.5 ||
-                drugs > 0.5
-            ) {
-
+            if (nudity > 0.5 || violence > 0.5 || gore > 0.5 || drugs > 0.5) {
                 return {
                     segura: false,
-                    motivo:
-                        "La imagen contiene contenido inapropiado"
+                    motivo: "La imagen contiene contenido inapropiado y no cumple con las normas de ArteNauta.",
                 };
             }
 
-            return {
-                segura: true
-            };
-
+            return { segura: true };
         } catch (err) {
-
-            console.log(err);
-
+            console.error("Error completo de Sightengine:", err);
             return {
                 segura: false,
-                motivo:
-                    "No fue posible analizar la imagen"
+                motivo: "No fue posible analizar la imagen. Asegúrate de que sea una URL pública válida.",
             };
         }
     };
@@ -124,148 +92,123 @@ export default function FormPublicaciones({
     // =========================
     // SUBMIT
     // =========================
-
     const handleSubmit = async () => {
+        const token = localStorage.getItem("token");
 
-        // =========================
-        // VALIDACION CAMPOS
-        // =========================
+        const usuarioString = localStorage.getItem("usuario");
+        let idUsuario = null;
 
-        if (
-            !form.Titulo.trim() ||
-            !form.Descripcion.trim()
-        ) {
+        if (usuarioString) {
+            try {
+                const usuarioObj = JSON.parse(usuarioString);
+                idUsuario = usuarioObj.id_usuario; 
+            } catch (error) {
+                console.error("Error leyendo el localStorage:", error);
+            }
+        }
 
+        if (!form.Titulo.trim() || !form.Descripcion.trim()) {
+            setError("El título y la descripción son obligatorios");
+            return;
+        }
+
+        if (!idUsuario) {
             setError(
-                'El título y la descripción son obligatorios'
+                "Error de sesión: No se pudo extraer el ID de usuario. Vuelve a iniciar sesión.",
             );
-
             return;
         }
 
         setLoading(true);
-
         setError(null);
 
         try {
-
             // =========================
             // VALIDAR IMAGEN
             // =========================
-
-            if (form.contenido.trim()) {
-
-                const validacion =
-                    await validarImagen(
-                        form.contenido
-                    );
+            if (form.contenido && form.contenido.trim()) {
+                const validacion = await validarImagen(form.contenido.trim());
 
                 if (!validacion.segura) {
-
                     setError(validacion.motivo);
-
                     setLoading(false);
-
                     return;
                 }
             }
 
             // =========================
-            // INSERTAR EN SUPABASE ArchivoAdjunto
+            // INSERTAR EN BACKEND
             // =========================
+            const payload = {
+                titulo: form.Titulo, 
+                descripcion: form.Descripcion,
+                contenido: form.contenido,
+                id_usuario_artista: idUsuario, 
+            };
 
-            const { data, error } =
-                await supabase
-                    .from('publicaciones')
-                    .insert([
-                        {
-                            titulo: form.Titulo,
-                            descripcion: form.Descripcion,
-                            contenido:
-                                form.contenido,
-                            //likes: 0,
-                            id_usuario_artista:
-                                idArtistaActivo
-                        }
-                    ])
-                    .select();
+            console.log("Enviando al backend:", payload);
 
-            if (error) throw error;
+            const res = await fetch("http://localhost:3000/publicaciones", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(payload),
+            });
 
-            console.log(
-                "Publicación creada:",
-                data
-            );
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(
+                    errData.error ||
+                        "No se pudo crear la publicación en el servidor.",
+                );
+            }
 
-            // =========================
-            // ACTUALIZAR PADRE
-            // =========================
+            const nuevaPub = await res.json();
+            console.log("Publicación creada con éxito:", nuevaPub);
 
-            onNuevaPublicacion(data[0]);
-
+            onNuevaPublicacion(nuevaPub);
             setExito(true);
 
             setTimeout(() => {
-
                 setExito(false);
-
                 onClose();
-
             }, 1500);
-
         } catch (err) {
-
-            console.log(err.message);
-
+            console.error(err);
             setError(err.message);
-
         } finally {
-
             setLoading(false);
         }
     };
 
     return (
-
         <div
             className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
-            style={{
-                backgroundColor:
-                    'rgba(0, 0, 0, 0.32)'
-            }}
+            style={{ backgroundColor: "rgba(0, 0, 0, 0.32)" }}
             onClick={onClose}
         >
-
             <div
                 className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4"
-                onClick={(e) =>
-                    e.stopPropagation()
-                }
+                onClick={(e) => e.stopPropagation()}
             >
-
                 {/* HEADER */}
-
                 <div className="flex justify-between items-center mb-4">
-
                     <h2 className="text-xl font-semibold text-gray-700">
                         Nueva publicación
                     </h2>
-
                     <button
                         onClick={onClose}
                         className="text-gray-400 hover:text-gray-600 text-xl font-bold"
                     >
                         ✕
                     </button>
-
                 </div>
 
                 {/* FORM */}
-
                 <div className="flex flex-col gap-3">
-
                     {/* TITULO */}
-
                     <input
                         type="text"
                         name="Titulo"
@@ -276,7 +219,6 @@ export default function FormPublicaciones({
                     />
 
                     {/* DESCRIPCION */}
-
                     <textarea
                         name="Descripcion"
                         value={form.Descripcion}
@@ -286,75 +228,54 @@ export default function FormPublicaciones({
                         className="border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 resize-none"
                     />
 
-                    {/* URL IMAGEN */}
-
+                    {/* URL IMAGEN (¡CORREGIDO name="contenido"!) */}
                     <input
                         type="text"
-                        name="Contenido"
-                        value={form.Contenido}
+                        name="contenido"
+                        value={form.contenido}
                         onChange={handleChange}
                         placeholder="URL de la imagen"
                         className="border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
                     />
 
                     {/* PREVIEW */}
-
                     {form.contenido && (
-
                         <div className="w-full h-48 rounded-xl overflow-hidden bg-gray-100 flex items-center justify-center">
-
                             <img
                                 src={form.contenido}
                                 alt="Preview"
                                 className="w-full h-full object-contain"
                                 onError={(e) => {
-                                    e.target.style.display =
-                                        "none";
+                                    e.target.style.display = "none";
                                 }}
                             />
-
                         </div>
-
                     )}
 
                     {/* ERROR */}
-
                     {error && (
-
-                        <p className="text-red-400 text-sm">
+                        <p className="text-red-500 text-sm font-medium">
                             {error}
                         </p>
-
                     )}
 
                     {/* EXITO */}
-
                     {exito && (
-
-                        <p className="text-green-500 text-sm">
+                        <p className="text-green-500 text-sm font-medium">
                             ¡Publicado con éxito! ✓
                         </p>
-
                     )}
 
                     {/* BOTON */}
-
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="bg-cyan-600 text-white rounded-xl py-2 text-sm font-medium hover:bg-cyan-900 transition disabled:opacity-50"
+                        className="bg-cyan-600 text-white rounded-xl py-2 text-sm font-medium hover:bg-cyan-700 transition disabled:opacity-50"
                     >
-
-                        {loading
-                            ? 'Validando y publicando...'
-                            : 'Publicar'}
-
+                        {loading ? "Validando y publicando..." : "Publicar"}
                     </button>
-
                 </div>
-
             </div>
-
         </div>
     );
 }
