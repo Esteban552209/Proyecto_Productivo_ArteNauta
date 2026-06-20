@@ -21,26 +21,7 @@ function Usuarios() {
                     },
                 },
             );
-
-            if (res.status === 401) {
-                console.log("Sesión expirada");
-
-                // Borramos los datos locales
-                localStorage.removeItem("token");
-                localStorage.removeItem("usuario");
-
-                Swal.fire({
-                    icon: "warning",
-                    title: "Sesión Expirada",
-                    text: "Tu sesión ha terminado por seguridad. Vuelve a ingresar.",
-                    confirmButtonColor: "#0891b2",
-                }).then(() => {
-                    window.location.reload();
-                });
-
-                return;
-            }
-
+            if (res.status === 401) return window.location.reload();
             if (!res.ok) throw new Error("Error al obtener los usuarios");
 
             const data = await res.json();
@@ -118,31 +99,14 @@ function Usuarios() {
                         body: JSON.stringify(formValues),
                     },
                 );
-
-                if (res.status === 401) {
-                    localStorage.removeItem("token");
-                    localStorage.removeItem("usuario");
-                    Swal.fire({
-                        icon: "warning",
-                        title: "Sesión Expirada",
-                        text: "Tu sesión ha terminado por seguridad. Vuelve a ingresar.",
-                        confirmButtonColor: "#0891b2",
-                    }).then(() => {
-                        window.location.reload();
-                    });
-                    return;
-                }
-
+                if (res.status === 401) return window.location.reload();
                 if (!res.ok) throw new Error("No se pudo actualizar el usuario");
-
                 const usuarioActualizado = await res.json();
-
                 setUsuarios(
                     usuarios.map((u) =>
                         u.id_usuario === usuario.id_usuario ? usuarioActualizado : u,
                     ),
                 );
-
                 Swal.fire({
                     title: "Actualizado",
                     icon: "success",

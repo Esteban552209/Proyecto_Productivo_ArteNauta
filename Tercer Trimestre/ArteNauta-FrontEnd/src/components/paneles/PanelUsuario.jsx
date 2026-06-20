@@ -26,9 +26,7 @@ function PanelUsuario({ setVista }) {
     useEffect(() => {
 
         const obtenerPublicaciones = async () => {
-
             try {
-
                 const { data, error } = await supabase
                     .from('publicaciones')
                     .select('*');
