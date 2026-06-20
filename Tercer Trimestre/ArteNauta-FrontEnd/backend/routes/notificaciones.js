@@ -49,22 +49,29 @@ router.get("/notificaciones/solicitudes", verificarToken, async (req, res) => {
 });
 
 // PATCH — aprobar solicitud
-// Ejemplo: PATCH /notificaciones/solicitudes/:id/aprobar
 router.patch("/notificaciones/solicitudes/:id/aprobar", verificarToken, async (req, res) => {
     try {
-        const { id } = req.params;  // path param — id de la solicitud
+        const { id } = req.params;
         const { id_usuario } = req.body;
 
         if (!id_usuario) {
             return res.status(400).json({ error: "id_usuario es requerido" });
         }
 
-        // 1. Actualizar estado solicitud
-        const { error: e1 } = await supabase
+        // 1. Actualizar estado solicitud — CON .select() para ver qué pasó
+        const { data: dataUpdate, error: e1 } = await supabase
             .from("solicitudes")
             .update({ estado_solicitud: "Aceptada" })
-            .eq("id_solicitud", id);
+            .eq("id_solicitud", id)
+            .select();
+
         if (e1) throw e1;
+
+        console.log("Filas actualizadas:", dataUpdate);
+
+        if (!dataUpdate || dataUpdate.length === 0) {
+            return res.status(404).json({ error: "No se encontró la solicitud o no se pudo actualizar (revisa RLS)" });
+        }
 
         // 2. Cambiar rol a artista
         const { error: e2 } = await supabase
@@ -89,7 +96,6 @@ router.patch("/notificaciones/solicitudes/:id/aprobar", verificarToken, async (r
         res.status(500).json({ error: error.message });
     }
 });
-
 // PATCH — rechazar solicitud
 // Ejemplo: PATCH /notificaciones/solicitudes/:id/rechazar
 router.patch("/notificaciones/solicitudes/:id/rechazar", verificarToken, async (req, res) => {

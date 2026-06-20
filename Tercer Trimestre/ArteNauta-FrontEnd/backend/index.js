@@ -4,7 +4,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth.js"
 import publicacionesRoutes from "./routes/publicaciones.js";
 import usuariosRoutes from "./routes/usuarios.js";
-import notificacionesRoutes from "./routes/norificaciones.js";
+import notificacionesRoutes from "./routes/notificaciones.js";
 import comentariosRoutes from "./routes/comentarios.js";
 
 const app = express();

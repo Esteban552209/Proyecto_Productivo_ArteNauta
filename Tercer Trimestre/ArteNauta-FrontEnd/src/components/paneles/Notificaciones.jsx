@@ -16,7 +16,6 @@ function Notificaciones({ usuario, setVista }) {
 
     const totalBadge = notificaciones.length + solicitudes.length;
 
-    // ── Headers reutilizables ──────────────────────────
     const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
@@ -26,9 +25,21 @@ function Notificaciones({ usuario, setVista }) {
         if (!idUsuario) return;
         cargar();
 
-        // Realtime — solo para recibir notificaciones nuevas en vivo
+        const nombreCanalNotif = `notif-${idUsuario}`;
+        const nombreCanalSol = `solicitudes-${idUsuario}`;
+        const nombreCanalRol = `rol-usuario-${idUsuario}`;
+
+        // Limpiar canales viejos con el mismo nombre antes de crear nuevos
+        supabase.getChannels().forEach(ch => {
+            const topic = ch.topic.replace('realtime:', '');
+            if (topic === nombreCanalNotif || topic === nombreCanalSol || topic === nombreCanalRol) {
+                supabase.removeChannel(ch);
+            }
+        });
+
+        // Canal notificaciones
         const canal = supabase
-            .channel(`notif-${idUsuario}`)
+            .channel(nombreCanalNotif)
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
@@ -39,20 +50,20 @@ function Notificaciones({ usuario, setVista }) {
             })
             .subscribe();
 
-        // Realtime solicitudes (solo admin)
-        let canalSol;
+        // Canal solicitudes (solo admin)
+        let canalSol = null;
         if (idRol === 3) {
             canalSol = supabase
-                .channel(`solicitudes-${idUsuario}`)
+                .channel(nombreCanalSol)
                 .on('postgres_changes', {
                     event: '*', schema: 'public', table: 'solicitudes',
                 }, () => cargarSolicitudes())
                 .subscribe();
         }
 
-        // Realtime cambio de rol
+        // Canal cambio de rol
         const canalRol = supabase
-            .channel(`rol-usuario-${idUsuario}`)
+            .channel(nombreCanalRol)
             .on('postgres_changes', {
                 event: 'UPDATE',
                 schema: 'public',
@@ -90,7 +101,6 @@ function Notificaciones({ usuario, setVista }) {
         return () => document.removeEventListener('mousedown', fn);
     }, []);
 
-    // ── GET notificaciones → backend ──────────────────
     async function cargar() {
         try {
             const res = await fetch(`${API}/notificaciones?id_usuario=${idUsuario}`, { headers });
@@ -103,7 +113,6 @@ function Notificaciones({ usuario, setVista }) {
         if (idRol === 3) cargarSolicitudes();
     }
 
-    // ── GET solicitudes → backend ─────────────────────
     async function cargarSolicitudes() {
         try {
             const res = await fetch(`${API}/notificaciones/solicitudes`, { headers });
@@ -115,7 +124,6 @@ function Notificaciones({ usuario, setVista }) {
         }
     }
 
-    // ── PATCH aprobar → backend ───────────────────────
     async function aprobarSolicitud(sol) {
         try {
             const res = await fetch(
@@ -136,7 +144,6 @@ function Notificaciones({ usuario, setVista }) {
         }
     }
 
-    // ── PATCH rechazar → backend ──────────────────────
     async function rechazarSolicitud(sol) {
         try {
             const res = await fetch(
@@ -206,7 +213,6 @@ function Notificaciones({ usuario, setVista }) {
                     </div>
 
                     <div className="max-h-96 overflow-y-auto">
-                        {/* Solicitudes pendientes — solo admin */}
                         {idRol === 3 && solicitudes.length > 0 && (
                             <div className="divide-y divide-yellow-100">
                                 {solicitudes.map(sol => (
@@ -241,7 +247,6 @@ function Notificaciones({ usuario, setVista }) {
                             </div>
                         )}
 
-                        {/* Vacío */}
                         {notificaciones.length === 0 && solicitudes.length === 0 && (
                             <div className="p-8 text-center">
                                 <div className="text-3xl mb-2">🔔</div>
@@ -249,7 +254,6 @@ function Notificaciones({ usuario, setVista }) {
                             </div>
                         )}
 
-                        {/* Notificaciones normales */}
                         {notificaciones.length > 0 && (
                             <div className="divide-y divide-gray-50">
                                 {notificaciones.map(n => (
