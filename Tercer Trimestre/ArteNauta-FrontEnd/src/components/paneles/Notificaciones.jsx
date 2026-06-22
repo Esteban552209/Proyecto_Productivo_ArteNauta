@@ -1,7 +1,10 @@
+//Importaciones
+
 import { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { supabase } from '../../lib/supabase';
-
+      
+//Dirección del backend
 const API = 'http://localhost:3000';
 
 function Notificaciones({ usuario, setVista }) {
@@ -9,9 +12,11 @@ function Notificaciones({ usuario, setVista }) {
     const idRol = Number(usuario?.id_rol);
     const token = localStorage.getItem('token');
 
+    // Estados, aqui guarda las notificaciones y solicitudes
     const [notificaciones, setNotificaciones] = useState([]);
     const [solicitudes, setSolicitudes] = useState([]);
     const [abierto, setAbierto] = useState(false);
+    // Ref para detectar clicks fuera del componente
     const ref = useRef(null);
 
     const totalBadge = notificaciones.length + solicitudes.length;
@@ -103,6 +108,7 @@ function Notificaciones({ usuario, setVista }) {
 
     async function cargar() {
         try {
+            // Cargar notificaciones
             const res = await fetch(`${API}/notificaciones?id_usuario=${idUsuario}`, { headers });
             if (!res.ok) throw new Error('Error al cargar notificaciones');
             const data = await res.json();
