@@ -13,8 +13,40 @@ function PanelUsuario({ setVista }) {
     const usuario = JSON.parse(localStorage.getItem('usuario'));
     const [seccion, setSeccion] = useState('inicio');
 
-    // Toda la lógica de fetch ahora vive en el hook
-    const { publicaciones, loading, error } = usePosts();
+    const [publicaciones, setPublicaciones] = useState([]);
+
+    const [loading, setLoading] = useState(true);
+
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+
+        const obtenerPublicaciones = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('publicaciones')
+                    .select('*');
+
+                if (error) throw error;
+
+                console.log(data);
+
+                setPublicaciones(data);
+
+            } catch (err) {
+
+                console.log(err.message);
+
+                setError(err.message);
+
+            }
+
+            setLoading(false);
+        };
+
+        obtenerPublicaciones();
+
+    }, []);
 
     return (
         <div className="min-h-screen bg-cyan-50 flex flex-col">
