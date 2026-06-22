@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_BASE = 'http://localhost:3002';
+const API_BASE = 'http://localhost:3000';
 const API_PUBLICACIONES = 'https://69d0711b90cd06523d5d38c4.mockapi.io/ApiAplicaciones';
 
 const StatCard = ({ label, value, colorBorder, textColor }) => (
