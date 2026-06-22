@@ -4,7 +4,7 @@ import { verificarToken } from "../middlewares/verificarToken.js";
 
 const router = express.Router();
 
-// GET — obtener notificaciones de un usuario
+// GET — obtener notificaciones de un usuario (no se si funciona)
 // Ejemplo: GET /notificaciones?id_usuario=5
 router.get("/notificaciones", verificarToken, async (req, res) => {
     try {
@@ -29,7 +29,7 @@ router.get("/notificaciones", verificarToken, async (req, res) => {
     }
 });
 
-// GET — obtener solicitudes pendientes (solo admin)
+// GET — obtener solicitudes pendientes (solo admin) (funciona)
 // Ejemplo: GET /notificaciones/solicitudes
 router.get("/notificaciones/solicitudes", verificarToken, async (req, res) => {
     try {
@@ -48,56 +48,43 @@ router.get("/notificaciones/solicitudes", verificarToken, async (req, res) => {
     }
 });
 
-// PATCH — aprobar solicitud
+// PATCH — aprobar solicitud (funciona)
 router.patch("/notificaciones/solicitudes/:id/aprobar", verificarToken, async (req, res) => {
     try {
-        const { id } = req.params;
-        const { id_usuario } = req.body;
+        const { id } = req.params; 
+        
+        // Esto te mostrará en la terminal de VS Code el número que estás probando
+        console.log("Intentando aprobar la solicitud con ID:", id);
 
-        if (!id_usuario) {
-            return res.status(400).json({ error: "id_usuario es requerido" });
-        }
-
-        // 1. Actualizar estado solicitud — CON .select() para ver qué pasó
-        const { data: dataUpdate, error: e1 } = await supabase
+        // Actualizar usando tus columnas tal cual
+        const { data, error } = await supabase
             .from("solicitudes")
             .update({ estado_solicitud: "Aceptada" })
-            .eq("id_solicitud", id)
+            .eq("id_solicitud", id) // <-- Se queda con tu columna original
             .select();
 
-        if (e1) throw e1;
+        if (error) throw error;
 
-        console.log("Filas actualizadas:", dataUpdate);
-
-        if (!dataUpdate || dataUpdate.length === 0) {
-            return res.status(404).json({ error: "No se encontró la solicitud o no se pudo actualizar (revisa RLS)" });
+        // Si entra aquí, es porque el número de ID no existe en la tabla de Supabase
+        if (!data || data.length === 0) {
+            return res.status(404).json({ 
+                error: `No se encontró ninguna solicitud donde id_solicitud sea igual a ${id}` 
+            });
         }
 
-        // 2. Cambiar rol a artista
-        const { error: e2 } = await supabase
-            .from("usuarios")
-            .update({ id_rol: 2 })
-            .eq("id_usuario", id_usuario);
-        if (e2) throw e2;
+        res.status(200).json({ 
+            mensaje: "¡Estado cambiado en Supabase correctamente!",
+            solicitud: data[0]
+        });
 
-        // 3. Crear notificación para el usuario
-        const { error: e3 } = await supabase
-            .from("notificaciones")
-            .insert({
-                id_usuario,
-                asunto: "¡Tu solicitud para ser artista fue aprobada!",
-                tipo_notificacion: "solicitud_aprobada",
-                fecha_notificacion: new Date().toISOString(),
-            });
-        if (e3) throw e3;
-
-        res.status(200).json({ mensaje: "Solicitud aprobada correctamente" });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
+
+
 // PATCH — rechazar solicitud
-// Ejemplo: PATCH /notificaciones/solicitudes/:id/rechazar
+// Ejemplo: PATCH /notificaciones/solicitudes/:id/rechazar (no se si funciona)
 router.patch("/notificaciones/solicitudes/:id/rechazar", verificarToken, async (req, res) => {
     try {
         const { id } = req.params;  // path param
@@ -132,3 +119,36 @@ router.patch("/notificaciones/solicitudes/:id/rechazar", verificarToken, async (
 });
 
 export default router;
+
+// PATH - Crear una nueva solicitud (Probando con Thunder Client)
+
+// Crear una nueva solicitud (POST)
+// Si usas el middleware de token lo dejas, si no, se lo quitas
+router.post('/solicitudes', verificarToken, async (req, res) => {
+    const { tipo_solicitud, id_usuario } = req.body;
+
+    try {
+        const { data, error } = await supabase
+            .from('solicitudes')
+            .insert([
+                { 
+                    tipo_solicitud, 
+                    id_usuario, 
+                    estado_solicitud: 'Pendiente' // Se crea automáticamente en "Pendiente"
+                }
+            ])
+            .select();
+
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        res.status(201).json({
+            mensaje: "¡Solicitud creada con éxito!",
+            solicitud: data[0]
+        });
+
+    } catch (error) {
+        res.status(500).json({ error: "Error interno del servidor" });
+    }
+});
