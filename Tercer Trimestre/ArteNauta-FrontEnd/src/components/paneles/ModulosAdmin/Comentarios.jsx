@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-const API_LOCAL_COMENTARIOS = "http://localhost:3002";
+const API_LOCAL_COMENTARIOS = "http://localhost:3000";
 
 function Comentarios() {
     const [comentarios, setComentarios] = useState([]);

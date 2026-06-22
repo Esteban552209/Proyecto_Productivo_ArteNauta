@@ -4,10 +4,12 @@ import { verificarToken } from "../middlewares/verificarToken.js";
 
 const router = express.Router();
 
-// GET: Muro de publicaciones con datos del artista (Ordenado por fecha descendente)
+// GET: Muro de publicaciones con Buscador y Filtros Avanzados
 router.get("/Muro-Publicaciones", verificarToken, async (req, res) => {
     try {
-        const { data, error } = await supabase
+        const { buscar, ordenFecha, ordenLikes } = req.query;
+
+        let consulta = supabase
             .from("publicaciones")
             .select(`
                 *,
@@ -16,8 +18,26 @@ router.get("/Muro-Publicaciones", verificarToken, async (req, res) => {
                     nombre,
                     email
                 )
-            `)
-            .order("fecha_publicacion", { ascending: false });
+            `);
+
+        // Busqueda
+        if (buscar && buscar.trim() !== "") {
+            consulta = consulta.or(`titulo.ilike.%${buscar}%,descripcion.ilike.%${buscar}%`);
+        }
+
+        // filtrado 
+        if (ordenLikes) {
+            // ordenLikes
+            consulta = consulta.order("likes", { ascending: ordenLikes === "asc" });
+        } else if (ordenFecha) {
+            // ordenFecha puede ser 'asc' o 'desc'
+            consulta = consulta.order("fecha_publicacion", { ascending: ordenFecha === "asc" });
+        } else {
+            // Más recientes primero
+            consulta = consulta.order("fecha_publicacion", { ascending: false });
+        }
+
+        const { data, error } = await consulta;
 
         if (error) throw error;
 

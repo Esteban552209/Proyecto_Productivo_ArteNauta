@@ -9,6 +9,7 @@ const API_SECRET = "RD3oJvHzcHqNVqoYkBxT5vmwBDTbC2DD";
 const MODELS = "nudity-2.1,weapon,alcohol,recreational_drug,gore-2.0,violence,self-harm";
 
 const IdArtista = localStorage.getItem("id_usuario");
+const token = localStorage.getItem("token");
 
 export default function FormPublicaciones({
     onNuevaPublicacion,
@@ -97,78 +98,75 @@ export default function FormPublicaciones({
         }
     };
 
-    // =========================
-    // SUBMIT
-    // =========================
-    const handleSubmit = async () => {
-        const token = localStorage.getItem("token")
+const handleSubmit = async () => {
+    const token = localStorage.getItem("token");
 
-        if (!form.Titulo.trim() || !form.Descripcion.trim()) {
-            setError('El título y la descripción son obligatorios');
-            return;
+    if (!form.Titulo.trim() || !form.Descripcion.trim()) {
+        setError('El título y la descripción son obligatorios');
+        return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+   
+        if (form.contenido && form.contenido.trim()) {
+            const validacion = await validarImagen(form.contenido.trim());
+
+            if (!validacion.segura) {
+                setError(validacion.motivo);
+                setLoading(false);
+                return; 
+            }
         }
 
-        setLoading(true);
-        setError(null);
+        const usuarioSesion = JSON.parse(localStorage.getItem('usuario'));
+        const artistaId = idArtistaActivo || usuarioSesion?.id_usuario || usuarioSesion?.id;
 
-        try {
-            // =========================
-            // VALIDAR IMAGEN (¡CORREGIDO!)
-            // =========================
-            if (form.contenido && form.contenido.trim()) {
-                const validacion = await validarImagen(form.contenido.trim());
-
-                if (!validacion.segura) {
-                    setError(validacion.motivo);
-                    setLoading(false);
-                    return; // Detiene por completo la inserción si no es segura
-                }
-            }
-
-            // =========================
-            // INSERTAR EN BACKEND
-            // =========================
-            const res = await fetch("http://localhost:3000/publicaciones", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                     Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    titulo: form.Titulo,
-                    descripcion: form.Descripcion,
-                    contenido: form.contenido,
-                    id_usuario_artista: get.IdArtista
-                }),
-            });
-
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || "No se pudo crear la publicación en el servidor.");
-            }
-
-            const nuevaPub = await res.json();
-            console.log("Publicación creada con éxito:", nuevaPub);
-
-            // =========================
-            // ACTUALIZAR PADRE
-            // =========================
-            onNuevaPublicacion(nuevaPub);
-
-            setExito(true);
-
-            setTimeout(() => {
-                setExito(false);
-                onClose();
-            }, 1500);
-
-        } catch (err) {
-            console.error(err);
-            setError(err.message);
-        } finally {
-            setLoading(false);
+        if (!artistaId) {
+            throw new Error("No se pudo identificar al artista activo. Inicia sesión de nuevo.");
         }
-    };
+
+        const res = await fetch("http://localhost:3000/publicaciones", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                titulo: form.Titulo,
+                descripcion: form.Descripcion,
+                contenido: form.contenido,
+                id_usuario_artista: artistaId 
+            }),
+        });
+
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || "No se pudo crear la publicación en el servidor.");
+        }
+
+        const nuevaPub = await res.json();
+        console.log("Publicación creada con éxito:", nuevaPub);
+
+
+        onNuevaPublicacion(nuevaPub);
+
+        setExito(true);
+
+        setTimeout(() => {
+            setExito(false);
+            onClose();
+        }, 1500);
+
+    } catch (err) {
+        console.error(err);
+        setError(err.message);
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <div
