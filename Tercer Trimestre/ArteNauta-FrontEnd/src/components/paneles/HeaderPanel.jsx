@@ -121,7 +121,7 @@ function HeaderPanel({
                                 onClick={onSubirArte}
                                 className="px-4 py-2 rounded font-medium transition bg-cyan-600 hover:bg-cyan-900"
                             >
-                                Subir Arte
+                                Nueva Publicacion
                             </button>
                             <button
                                 onClick={() => setSeccion("conversaciones")}

@@ -6,9 +6,17 @@ import axios from "axios";
 // =========================
 const API_USER = "741146561";
 const API_SECRET = "RD3oJvHzcHqNVqoYkBxT5vmwBDTbC2DD";
-const MODELS =
-    "nudity-2.1,weapon,alcohol,recreational_drug,gore-2.0,violence,self-harm";
-export default function FormPublicaciones({ onNuevaPublicacion, onClose }) {
+const MODELS = "nudity-2.1,weapon,alcohol,recreational_drug,gore-2.0,violence,self-harm";
+
+const IdArtista = localStorage.getItem("id_usuario");
+const token = localStorage.getItem("token");
+
+export default function FormPublicaciones({
+    onNuevaPublicacion,
+    onClose,
+    idArtistaActivo
+}) {
+
     // =========================
     // ESTADOS (Todo unificado a minúsculas/estructuras limpias)
     // =========================
@@ -89,38 +97,31 @@ export default function FormPublicaciones({ onNuevaPublicacion, onClose }) {
         }
     };
 
-    // =========================
-    // SUBMIT
-    // =========================
-    const handleSubmit = async () => {
-        const token = localStorage.getItem("token");
+const handleSubmit = async () => {
+    const token = localStorage.getItem("token");
 
-        const usuarioString = localStorage.getItem("usuario");
-        let idUsuario = null;
+    if (!form.Titulo.trim() || !form.Descripcion.trim()) {
+        setError('El título y la descripción son obligatorios');
+        return;
+    }
 
-        if (usuarioString) {
-            try {
-                const usuarioObj = JSON.parse(usuarioString);
-                idUsuario = usuarioObj.id_usuario; 
-            } catch (error) {
-                console.error("Error leyendo el localStorage:", error);
+    setLoading(true);
+    setError(null);
+
+    try {
+   
+        if (form.contenido && form.contenido.trim()) {
+            const validacion = await validarImagen(form.contenido.trim());
+
+            if (!validacion.segura) {
+                setError(validacion.motivo);
+                setLoading(false);
+                return; 
             }
         }
 
-        if (!form.Titulo.trim() || !form.Descripcion.trim()) {
-            setError("El título y la descripción son obligatorios");
-            return;
-        }
-
-        if (!idUsuario) {
-            setError(
-                "Error de sesión: No se pudo extraer el ID de usuario. Vuelve a iniciar sesión.",
-            );
-            return;
-        }
-
-        setLoading(true);
-        setError(null);
+        const usuarioSesion = JSON.parse(localStorage.getItem('usuario'));
+        const artistaId = idArtistaActivo || usuarioSesion?.id_usuario || usuarioSesion?.id;
 
         try {
             // =========================
@@ -181,7 +182,46 @@ export default function FormPublicaciones({ onNuevaPublicacion, onClose }) {
         } finally {
             setLoading(false);
         }
-    };
+
+        const res = await fetch("http://localhost:3000/publicaciones", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                titulo: form.Titulo,
+                descripcion: form.Descripcion,
+                contenido: form.contenido,
+                id_usuario_artista: artistaId 
+            }),
+        });
+
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || "No se pudo crear la publicación en el servidor.");
+        }
+
+        const nuevaPub = await res.json();
+        console.log("Publicación creada con éxito:", nuevaPub);
+
+
+        onNuevaPublicacion(nuevaPub);
+
+        setExito(true);
+
+        setTimeout(() => {
+            setExito(false);
+            onClose();
+        }, 1500);
+
+    } catch (err) {
+        console.error(err);
+        setError(err.message);
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <div
