@@ -84,47 +84,51 @@ router.patch("/notificaciones/solicitudes/:id/aprobar", verificarToken, async (r
 
 
 // PATCH — rechazar solicitud
-// Ejemplo: PATCH /notificaciones/solicitudes/:id/rechazar (no se si funciona)
 router.patch("/notificaciones/solicitudes/:id/rechazar", verificarToken, async (req, res) => {
     try {
-        const { id } = req.params;  // path param
-        const { id_usuario } = req.body;
+        const { id } = req.params;  // ID de la solicitud desde la URL
 
-        if (!id_usuario) {
-            return res.status(400).json({ error: "id_usuario es requerido" });
+        // 1. Buscamos la solicitud primero para obtener el id_usuario automáticamente
+        const { data: solicitud, error: errorBusqueda } = await supabase
+            .from("solicitudes")
+            .select("id_usuario")
+            .eq("id_solicitud", id)
+            .single(); // Trae un solo objeto en vez de un array
+
+        if (errorBusqueda || !solicitud) {
+            return res.status(404).json({ error: "La solicitud no existe o ya fue procesada." });
         }
 
-        // 1. Actualizar estado solicitud
+        const id_usuario = solicitud.id_usuario; // Guardamos el ID del dueño de la solicitud
+
+        // 2. Actualizar estado de la solicitud a Rechazada
         const { error: e1 } = await supabase
             .from("solicitudes")
             .update({ estado_solicitud: "Rechazada" })
             .eq("id_solicitud", id);
         if (e1) throw e1;
 
-        // 2. Crear notificación para el usuario
+        // 3. Crear notificación para el usuario de manera automática
         const { error: e2 } = await supabase
             .from("notificaciones")
             .insert({
-                id_usuario,
+                id_usuario, // Usamos el ID que encontramos en el paso 1
                 asunto: "Tu solicitud para ser artista fue rechazada.",
                 tipo_notificacion: "solicitud_rechazada",
                 fecha_notificacion: new Date().toISOString(),
             });
         if (e2) throw e2;
 
-        res.status(200).json({ mensaje: "Solicitud rechazada correctamente" });
+        res.status(200).json({ mensaje: "Solicitud rechazada correctamente en Supabase y notificación enviada." });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
-
-export default router;
-
 // PATH - Crear una nueva solicitud (Probando con Thunder Client)
 
 // Crear una nueva solicitud (POST)
 // Si usas el middleware de token lo dejas, si no, se lo quitas
-router.post('/solicitudes', verificarToken, async (req, res) => {
+router.post('/notificaciones/solicitudes', verificarToken, async (req, res) => {
     const { tipo_solicitud, id_usuario } = req.body;
 
     try {
@@ -152,3 +156,5 @@ router.post('/solicitudes', verificarToken, async (req, res) => {
         res.status(500).json({ error: "Error interno del servidor" });
     }
 });
+
+export default router;  
