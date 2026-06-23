@@ -6,6 +6,8 @@ import publicacionesRoutes from "./routes/publicaciones.js";
 import usuariosRoutes from "./routes/usuarios.js";
 import comentariosRoutes from "./routes/comentarios.js";
 import conversacionesRoutes from "./routes/conversaciones.js";
+import mensajesRouter from "./routes/mensajes.js";
+
 
 const app = express();
 
@@ -17,6 +19,7 @@ app.use(publicacionesRoutes);
 app.use(usuariosRoutes);
 app.use(comentariosRoutes);
 app.use(conversacionesRoutes);
+app.use("/", mensajesRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
