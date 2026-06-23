@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
-const API_PUBLICACIONES ='http://localhost:3002/publicaciones';
+const API_PUBLICACIONES ='http://localhost:3000/publicaciones';
 
 function Publicaciones() {
     const [publicaciones, setPublicaciones] = useState([]);

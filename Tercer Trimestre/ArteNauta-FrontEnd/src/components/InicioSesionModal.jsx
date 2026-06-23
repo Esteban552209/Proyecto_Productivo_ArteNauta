@@ -62,7 +62,7 @@ function LoginModal({ isOpen, onClose, setVista }) {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={onClose}>
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 relative animate-fadeIn" onClick={(e) => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">
+                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl cursor-pointer">
                     ✕
                 </button>
                 <h2 className="text-2xl font-bold text-center text-cyan-600 mb-1">
@@ -88,7 +88,7 @@ function LoginModal({ isOpen, onClose, setVista }) {
                         <p className="text-right text-sm text-cyan-600 my-3 hover:underline cursor-pointer">
                             ¿Olvidaste tu contraseña?
                         </p>
-                        <button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 rounded-lg transition">
+                        <button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 rounded-lg transition cursor-pointer">
                             Entrar
                         </button>
                     </form>

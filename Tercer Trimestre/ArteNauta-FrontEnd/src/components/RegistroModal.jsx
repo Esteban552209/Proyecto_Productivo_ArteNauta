@@ -96,7 +96,7 @@ function LoginModal({ isOpen, onClose }) {
             >
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl cursor-pointer"
                 >
                     ✕
                 </button>
@@ -194,7 +194,7 @@ function LoginModal({ isOpen, onClose }) {
                             required
                         />
                     </div>
-                    <button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 rounded-lg transition">
+                    <button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 rounded-lg transition cursor-pointer">
                         Confirmar
                     </button>
                     <p className="text-center text-sm text-gray-500">
