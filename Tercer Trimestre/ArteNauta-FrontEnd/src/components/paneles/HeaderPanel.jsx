@@ -138,7 +138,7 @@ function HeaderPanel({
                         </>
                     )}
 
-                    <Notificaciones usuario={usuario} />
+                    <Notificaciones usuario={usuario} setVista={setVista} />
 
                     <button
                         onClick={cerrarSesion}
