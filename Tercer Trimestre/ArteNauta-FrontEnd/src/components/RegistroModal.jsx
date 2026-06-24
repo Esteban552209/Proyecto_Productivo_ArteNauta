@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { supabase } from "../lib/supabase";
 import Swal from "sweetalert2";
 
-function LoginModal({ isOpen, onClose }) {
+function RegistroModal({ isOpen, onClose, alCambiarAModalLogin }) {
+    const [isClosing, setIsClosing] = useState(false);
     const [formulario, setFormulario] = useState({
         nombre: "",
         apellido: "",
@@ -12,7 +12,15 @@ function LoginModal({ isOpen, onClose }) {
         confirmarPassword: "",
     });
 
-    if (!isOpen) return null;
+    if (!isOpen && !isClosing) return null;
+
+    const manejarCierre = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+            setIsClosing(false);
+        }, 300);
+    };
 
     const manejarCambio = (e) => {
         setFormulario({
@@ -21,81 +29,88 @@ function LoginModal({ isOpen, onClose }) {
         });
     };
 
-        const manejarRegistro = async (e) => {
-            e.preventDefault();
+    const manejarRegistro = async (e) => {
+        e.preventDefault();
 
-            // Validación de contraseñas
-            if (formulario.password !== formulario.confirmarPassword) {
-                Swal.fire({
-                    icon: "error",
-                    title: "Error",
-                    text: "Las contraseñas no coinciden",
-                    confirmButtonColor: "#0891b2",
-                });
-                return;
+        if (formulario.password !== formulario.confirmarPassword) {
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Las contraseñas no coinciden",
+                confirmButtonColor: "#0891b2",
+            });
+            return;
+        }
+
+        try {
+            const respuesta = await fetch(
+                "http://localhost:3000/usuario/registro",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        nombre: formulario.nombre,
+                        apellido: formulario.apellido,
+                        telefono: formulario.telefono,
+                        email: formulario.correo,
+                        clave: formulario.password,
+                        id_rol: 1,
+                    }),
+                },
+            );
+
+            const data = await respuesta.json();
+
+            if (!respuesta.ok) {
+                throw new Error(
+                    data.error || "Error al registrar en el servidor",
+                );
             }
 
-            try {
-                // Reemplazo de FETCH por SUPABASE
-                const { error } = await supabase
-                    .from("usuarios") // Nombre de tu tabla
-                    .insert([
-                        {
-                            nombre: formulario.nombre,
-                            apellido: formulario.apellido,
-                            telefono: formulario.telefono,
-                            email: formulario.correo, 
-                            clave: formulario.password,
-                            id_rol: 1, 
-                        },
-                    ]);
+            setFormulario({
+                nombre: "",
+                apellido: "",
+                telefono: "",
+                correo: "",
+                password: "",
+                confirmarPassword: "",
+            });
 
-                if (error) throw error; 
+            Swal.fire({
+                icon: "success",
+                title: "¡Registro exitoso!",
+                text: "Ya puedes iniciar sesión en ArteNauta",
+                confirmButtonColor: "#0891b2",
+                timer: 1500,
+                showConfirmButton: false,
+            });
 
-                setFormulario({
-                    nombre: "",
-                    apellido: "",
-                    telefono: "",
-                    correo: "",
-                    password: "",
-                    confirmarPassword: "",
-                });
-
-                Swal.fire({
-                    icon: "success",
-                    title: "¡Registro exitoso!",
-                    text: "Ya puedes iniciar sesión en ArteNauta",
-                    confirmButtonColor: "#0891b2",
-                    timer: 1500,
-                    showConfirmButton: false,
-                });
-
-                onClose();
-            } catch (error) {
-                console.error("Error detallado:", error);
-                Swal.fire({
-                    icon: "error",
-                    title: "Error al registrar",
-                    text:
-                        error.message ||
-                        "No se pudo conectar con la base de datos",
-                    confirmButtonColor: "#0891b2",
-                });
-            }
-        };
+            onClose();
+        } catch (error) {
+            console.error("Error detallado:", error);
+            Swal.fire({
+                icon: "error",
+                title: "Error al registrar",
+                text: error.message || "No se pudo conectar con el servidor",
+                confirmButtonColor: "#0891b2",
+            });
+        }
+    };
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm animar-fondo"
             style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
             onClick={onClose}
         >
             <div
-                className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 relative animate-fadeIn"
+                className={`bg-white rounded-2xl shadow-xl w-full max-w-md p-8 relative ${isClosing ? "animar-pop-salida" : "animar-pop"}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
-                    onClick={onClose}
+                    onClick={manejarCierre}
                     className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
                 >
                     ✕
@@ -199,7 +214,10 @@ function LoginModal({ isOpen, onClose }) {
                     </button>
                     <p className="text-center text-sm text-gray-500">
                         ¿Ya tienes una cuenta?{" "}
-                        <span className="text-cyan-600 hover:underline cursor-pointer font-medium cursor pointer">
+                        <span
+                            onClick={alCambiarAModalLogin}
+                            className="text-cyan-600 hover:underline cursor-pointer font-medium cursor pointer"
+                        >
                             Inicia sesion
                         </span>
                     </p>
@@ -209,4 +227,4 @@ function LoginModal({ isOpen, onClose }) {
     );
 }
 
-export default LoginModal;
+export default RegistroModal;

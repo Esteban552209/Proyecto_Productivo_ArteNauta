@@ -1,5 +1,6 @@
 import express from "express";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 import { supabase } from "../config/supabase.js"; 
 
 const router = express.Router();
@@ -12,7 +13,6 @@ router.post("/auth/login", async (req, res) => {
             .from("usuarios")
             .select("*")
             .eq("email", email) 
-            .eq("clave", password)
             .maybeSingle();
 
         if (error) throw error;
@@ -21,8 +21,14 @@ router.post("/auth/login", async (req, res) => {
             return res.status(401).json({ mensaje: "Correo o contraseña incorrectos" });
         }
 
+        const passwordValida = await bcrypt.compare(password, usuarioEncontrado.clave);
+
+        if (!passwordValida) {
+            return res.status(401).json({ mensaje: "Correo o contraseña incorrectos" });
+        }
+
         const payload = {
-            id: usuarioEncontrado.id,
+            id_usuario: usuarioEncontrado.id_usuario,
             id_rol: usuarioEncontrado.id_rol 
         };
 
@@ -32,7 +38,12 @@ router.post("/auth/login", async (req, res) => {
         res.status(200).json({
             mensaje: "Inicio de sesión exitoso",
             token: token,
-            usuario: usuarioEncontrado
+            usuario: {
+                id_usuario: usuarioEncontrado.id_usuario,
+                nombre: usuarioEncontrado.nombre,
+                email: usuarioEncontrado.email,
+                id_rol: usuarioEncontrado.id_rol
+            }
         });
 
     } catch (error) {
