@@ -1,0 +1,61 @@
+@keyframes fadeInBackdrop {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.animar-fondo {
+    animation: fadeInBackdrop 0.3s ease-out forwards;
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.90);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animar-pop {
+    animation: popIn 0.3s ease-out forwards;
+}
+
+/* Animación para ocultar el fondo oscuro */
+@keyframes fadeOutBackdrop {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+.animar-fondo-salida {
+    animation: fadeOutBackdrop 0.3s ease-in forwards;
+}
+
+/* Animación para que la ventana se encoja y desaparezca */
+@keyframes popOut {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.90);
+    }
+}
+
+.animar-pop-salida {
+    animation: popOut 0.3s ease-in forwards;
+}

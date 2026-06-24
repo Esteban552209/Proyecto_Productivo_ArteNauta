@@ -1,8 +1,39 @@
 import express from "express";
+import bcrypt from 'bcrypt';
 import { supabase } from "../config/supabase.js";
 import { verificarToken } from "../middlewares/verificarToken.js";
 
 const router = express.Router();
+
+// PETICION POST REGISTRO DE USUARIOS
+router.post('/usuario/registro', async (req, res) => {
+    const { nombre, apellido, telefono, email, clave, id_rol } = req.body;
+
+    try {
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(clave, saltRounds);
+        const { data, error } = await supabase
+            .from('usuarios')
+            .insert([
+                {
+                    nombre: nombre,
+                    apellido: apellido,
+                    telefono: telefono,
+                    email: email,
+                    clave: hashedPassword,
+                    id_rol: id_rol
+                }
+            ]);
+
+        if (error) throw error;
+
+        res.status(201).json({ mensaje: 'Usuario registrado exitosamente' });
+
+    } catch (error) {
+        console.error("Error en el registro del backend:", error);
+        res.status(500).json({ error: error.message || 'Hubo un error al registrar el usuario' });
+    }
+});
 
 // PETICIÓN QUERY USUARIOS ACTIVOS O DESACTIVADOS
 router.get("/usuarios", verificarToken, async (req, res) => {
