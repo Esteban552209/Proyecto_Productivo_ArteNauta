@@ -31,65 +31,89 @@ function SolicitarArtista() {
         setCargando(false);
     }
 
-    async function enviar() {
-        setEnviando(true);
-        try {
-            // 1. Crear solicitud
-            const { error } = await supabase
-                .from("solicitudes")
-                .insert({
-                    id_usuario: idUsuario,
-                    tipo_solicitud: "artista",
-                    estado_solicitud: "pendiente",
-                    mensaje: mensaje.trim() || null,
-                    fecha_solicitud: new Date().toISOString(),
-                });
+   async function enviar() {
+    setEnviando(true);
+    try {
+        // ── Verificación en tiempo real antes de insertar ──
+        const { data: pendienteExistente, error: errorCheck } = await supabase
+            .from("solicitudes")
+            .select("id_solicitud")
+            .eq("id_usuario", idUsuario)
+            .eq("tipo_solicitud", "artista")
+            .eq("estado_solicitud", "pendiente")
+            .maybeSingle();
 
-            if (error) throw error;
+        if (errorCheck) throw errorCheck;
 
-            // 2. Notificar a todos los admins (id_rol === 3)
-            const { data: admins } = await supabase
-                .from("usuarios")
-                .select("id_usuario")
-                .eq("id_rol", 3);
-
-            if (admins?.length) {
-                await supabase.from("notificaciones").insert(
-                    admins.map(a => ({
-                        id_usuario: a.id_usuario,
-                        asunto: "Nueva solicitud de artista",
-                        descripcion: `${usuario.nombre} quiere convertirse en artista.`,
-                        tipo_notificacion: "nueva_solicitud_artista",
-                        leida: false,
-                        fecha_notificacion: new Date().toISOString(),
-                    }))
-                );
-            }
-
-            setMostrarForm(false);
-            setMensaje("");
-            await cargar();
-
+        if (pendienteExistente) {
+            // Ya existe una pendiente — no se crea otra
+            await cargar(); // refresca el estado para mostrar el aviso correcto
             Swal.fire({
-                icon: "success",
-                title: "¡Solicitud enviada!",
-                text: "Te notificaremos cuando el administrador responda.",
-                confirmButtonColor: "#0891b2",
-                timer: 2500,
-                showConfirmButton: false,
-            });
-        } catch (err) {
-            console.error(err);
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: "No se pudo enviar la solicitud. Intenta de nuevo.",
+                icon: "info",
+                title: "Ya tienes una solicitud pendiente",
+                text: "Espera la respuesta del administrador antes de enviar otra.",
                 confirmButtonColor: "#0891b2",
             });
-        } finally {
             setEnviando(false);
+            return;
         }
+
+        // 1. Crear solicitud
+        const { error } = await supabase
+            .from("solicitudes")
+            .insert({
+                id_usuario: idUsuario,
+                tipo_solicitud: "artista",
+                estado_solicitud: "pendiente",
+                mensaje: mensaje.trim() || null,
+                fecha_solicitud: new Date().toISOString(),
+            });
+
+        if (error) throw error;
+
+        // 2. Notificar a todos los admins (id_rol === 3)
+        const { data: admins } = await supabase
+            .from("usuarios")
+            .select("id_usuario")
+            .eq("id_rol", 3);
+
+        if (admins?.length) {
+            await supabase.from("notificaciones").insert(
+                admins.map(a => ({
+                    id_usuario: a.id_usuario,
+                    asunto: "Nueva solicitud de artista",
+                    descripcion: `${usuario.nombre} quiere convertirse en artista.`,
+                    tipo_notificacion: "nueva_solicitud_artista",
+                    leida: false,
+                    fecha_notificacion: new Date().toISOString(),
+                }))
+            );
+        }
+
+        setMostrarForm(false);
+        setMensaje("");
+        await cargar();
+
+        Swal.fire({
+            icon: "success",
+            title: "¡Solicitud enviada!",
+            text: "Te notificaremos cuando el administrador responda.",
+            confirmButtonColor: "#0891b2",
+            timer: 2500,
+            showConfirmButton: false,
+        });
+    } catch (err) {
+        console.error(err);
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "No se pudo enviar la solicitud. Intenta de nuevo.",
+            confirmButtonColor: "#0891b2",
+        });
+    } finally {
+        setEnviando(false);
     }
+}
 
     if (cargando) return null;
 
