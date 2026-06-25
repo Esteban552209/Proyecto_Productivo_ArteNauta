@@ -5,46 +5,22 @@ import { verificarToken } from "../middlewares/verificarToken.js";
 const router = express.Router();
 
 
-router.get("/conversaciones", verificarToken, async (req, res) => {
+
+//Metodo get
+router.get("/:id_conversacion", verificarToken, async (req, res) => {
     try {
-        const id_usuario = req.usuario.id_usuario;
+        const { id_conversacion } = req.params;
 
-        
-        const { data, error } = await supabase
-            .from("participantes")
-            .select(`
-                id_conversacion,
-                conversaciones!id_conversacion (
-                    id_conversacion,
-                    fecha_creacion
-                )
-            `)
-            .eq("id_usuario", id_usuario);
-
-        if (error) throw error;
-
-        res.status(200).json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
-router.get("/conversaciones/:id/mensajes", verificarToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-
+        // Trae los mensajes adaptados a tus 4 columnas reales
         const { data, error } = await supabase
             .from("mensajes")
             .select(`
                 id_mensaje,
-                contenido,
-                fecha_envio,
+                id_conversacion,
                 id_usuario,
-                usuarios!id_usuario (nombre, apellido)
+                contenido
             `)
-            .eq("id_conversacion", id)
-            .order("fecha_envio", { ascending: true });
+            .eq("id_conversacion", id_conversacion); 
 
         if (error) throw error;
 
@@ -54,59 +30,25 @@ router.get("/conversaciones/:id/mensajes", verificarToken, async (req, res) => {
     }
 });
 
-
-router.post("/conversaciones", verificarToken, async (req, res) => {
+//Metodo post
+router.post("/", verificarToken, async (req, res) => {
     try {
-        const { id_usuario_destino } = req.body;
-        const id_usuario_origen = req.usuario.id_usuario;
+        const id_usuario = req.usuario.id_usuario; // Extraído del token
+        const { id_conversacion, contenido } = req.body;
 
-        
-        const { data: conv, error: convError } = await supabase
-            .from("conversaciones")
-            .insert({ fecha_creacion: new Date() })
-            .select()
-            .single();
+        if (!contenido || contenido.trim() === "") {
+            return res.status(400).json({ error: "El mensaje no puede estar vacío" });
+        }
 
-        if (convError) throw convError;
-
-        
-        const { error: partError } = await supabase
-            .from("participantes")
-            .insert([
-                { id_conversacion: conv.id_conversacion, id_usuario: id_usuario_origen },
-                { id_conversacion: conv.id_conversacion, id_usuario: id_usuario_destino },
-            ]);
-
-        if (partError) throw partError;
-
-        res.status(201).json(conv);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
-router.post("/conversaciones/:id/mensajes", verificarToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { contenido } = req.body;
-        const id_usuario = req.usuario.id_usuario;
-
+        // Inserta solo en las columnas existentes en tu Supabase
         const { data, error } = await supabase
             .from("mensajes")
             .insert({
-                contenido,
-                id_conversacion: id,
-                id_usuario,
-                fecha_envio: new Date(),
+                id_conversacion: id_conversacion,
+                id_usuario: id_usuario,
+                contenido: contenido.trim()
             })
-            .select(`
-                id_mensaje,
-                contenido,
-                fecha_envio,
-                id_usuario,
-                usuarios!id_usuario (nombre, apellido)
-            `)
+            .select()
             .single();
 
         if (error) throw error;
@@ -117,47 +59,42 @@ router.post("/conversaciones/:id/mensajes", verificarToken, async (req, res) => 
     }
 });
 
+// metodo patch
+router.patch('/:id_mensaje', async (req, res) => {
+    const { id_mensaje } = req.params;
+    const { contenido } = req.body;
 
-router.patch("/mensajes/:id", verificarToken, async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { contenido } = req.body;
-        const id_usuario = req.usuario.id_usuario;
-
-        const { data, error } = await supabase
-            .from("mensajes")
-            .update({ contenido })
-            .eq("id_mensaje", id)
-            .eq("id_usuario", id_usuario) // solo puede editar el remitente
-            .select()
-            .single();
-
-        if (error) throw error;
-        if (!data) return res.status(403).json({ error: "No autorizado o mensaje no encontrado" });
-
-        res.status(200).json(data);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+    // 1. Validar que el nuevo contenido no venga vacío
+    if (!contenido || contenido.trim() === '') {
+        return res.status(400).json({ error: 'El campo contenido es obligatorio para editar el mensaje.' });
     }
-});
 
-
-router.delete("/mensajes/:id", verificarToken, async (req, res) => {
     try {
-        const { id } = req.params;
-        const id_usuario = req.usuario.id_usuario;
+        // 2. Actualizar el mensaje en Supabase
+        const { data, error } = await supabase
+            .from('mensajes')
+            .update({ contenido: contenido }) // Actualizamos solo la columna contenido
+            .eq('id_mensaje', id_mensaje)     // Filtramos por el ID del mensaje que viene en la URL
+            .select();                        // .select() para que Supabase nos devuelva el registro modificado
 
-        const { error } = await supabase
-            .from("mensajes")
-            .delete()
-            .eq("id_mensaje", id)
-            .eq("id_usuario", id_usuario); // solo puede borrar el remitente
+        // Si ocurre un error con Supabase
+        if (error) {
+            return res.status(500).json({ error: error.message });
+        }
 
-        if (error) throw error;
+        // Si el mensaje no existe o no se modificó nada
+        if (!data || data.length === 0) {
+            return res.status(404).json({ error: 'Mensaje no encontrado.' });
+        }
 
-        res.status(200).json({ mensaje: "Mensaje eliminado correctamente" });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+        // 3. Devolver el mensaje ya editado con éxito
+        return res.status(200).json({
+            mensaje: 'Mensaje editado con éxito',
+            data: data[0]
+        });
+
+    } catch (err) {
+        return res.status(500).json({ error: 'Error interno del servidor.' });
     }
 });
 

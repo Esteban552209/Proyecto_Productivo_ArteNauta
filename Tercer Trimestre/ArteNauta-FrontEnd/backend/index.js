@@ -19,7 +19,7 @@ app.use(publicacionesRoutes);
 app.use(usuariosRoutes);
 app.use(comentariosRoutes);
 app.use(conversacionesRoutes);
-app.use("/", mensajesRouter);
+app.use("/mensajes", mensajesRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
