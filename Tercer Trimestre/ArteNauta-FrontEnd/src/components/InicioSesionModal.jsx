@@ -52,7 +52,7 @@ function LoginModal({ isOpen, onClose, setVista, alCambiarAModalRegistro }) {
                 Swal.fire({
                     icon: "error",
                     title: "Ups...",
-                    text: "Correo o contraseña incorrectos",
+                    text: data.mensaje || "Ocurrió un error al iniciar sesión",
                     confirmButtonColor: "#0891b2",
                     confirmButtonText: "Intentar de nuevo",
                 });
