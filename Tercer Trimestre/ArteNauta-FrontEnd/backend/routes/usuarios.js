@@ -35,20 +35,28 @@ router.post('/usuario/registro', async (req, res) => {
     }
 });
 
-// PETICIÓN QUERY USUARIOS ACTIVOS O DESACTIVADOS
+// PETICIÓN QUERY USUARIOS: ESTADO, BÚSQUEDA Y ROL
 router.get("/usuarios", verificarToken, async (req, res) => {
     try {
-        const estadoQuery = req.query.estado;
+        const { estado, buscar, rol } = req.query;
 
         let consulta = supabase
             .from("usuarios")
-            .select(`id_usuario, nombre, apellido, email, estado_cuenta, roles!id_rol (nombre_rol), fecha_registro`)
+            .select(`id_usuario, nombre, apellido, email, estado_cuenta, id_rol, roles!id_rol (id_rol, nombre_rol), fecha_registro`)
             .order('id_usuario', { ascending: true });
 
-        if (estadoQuery === "true") {
+        if (estado === "true") {
             consulta = consulta.eq("estado_cuenta", true);
-        } else if (estadoQuery === "false") {
+        } else if (estado === "false") {
             consulta = consulta.eq("estado_cuenta", false);
+        }
+
+        if (buscar && buscar.trim() !== "") {
+            consulta = consulta.or(`nombre.ilike.%${buscar}%,apellido.ilike.%${buscar}%,email.ilike.%${buscar}%`);
+        }
+
+        if (rol && rol.trim() !== "") {
+            consulta = consulta.eq("id_rol", rol); 
         }
 
         const { data, error } = await consulta;
