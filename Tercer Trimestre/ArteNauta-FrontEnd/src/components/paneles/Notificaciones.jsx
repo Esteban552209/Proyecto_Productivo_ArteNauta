@@ -1,5 +1,4 @@
 //Importaciones
-
 import { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { supabase } from '../../lib/supabase';
@@ -7,16 +6,43 @@ import { supabase } from '../../lib/supabase';
 //Dirección del backend
 const API = 'http://localhost:3000';
 
+// Mapeo de vectores SVG profesionales para reemplazar los emojis de las alertas
+const iconosNotificacion = {
+    solicitud_aprobada: (
+        <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+    solicitud_rechazada: (
+        <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    ),
+    censura_obra: (
+        <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
+    ),
+    advertencia: (
+        <svg className="w-5 h-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+    ),
+    mensaje_admin: (
+        <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+    ),
+};
+
 function Notificaciones({ usuario, setVista }) {
     const idUsuario = usuario?.id_usuario;
     const idRol = Number(usuario?.id_rol);
     const token = localStorage.getItem('token');
 
-    // Estados, aqui guarda las notificaciones y solicitudes
     const [notificaciones, setNotificaciones] = useState([]);
     const [solicitudes, setSolicitudes] = useState([]);
     const [abierto, setAbierto] = useState(false);
-    // Ref para detectar clicks fuera del componente
     const ref = useRef(null);
 
     const totalBadge = notificaciones.length + solicitudes.length;
@@ -34,7 +60,6 @@ function Notificaciones({ usuario, setVista }) {
         const nombreCanalSol = `solicitudes-${idUsuario}`;
         const nombreCanalRol = `rol-usuario-${idUsuario}`;
 
-        // Limpiar canales viejos con el mismo nombre antes de crear nuevos
         supabase.getChannels().forEach(ch => {
             const topic = ch.topic.replace('realtime:', '');
             if (topic === nombreCanalNotif || topic === nombreCanalSol || topic === nombreCanalRol) {
@@ -42,7 +67,6 @@ function Notificaciones({ usuario, setVista }) {
             }
         });
 
-        // Canal notificaciones
         const canal = supabase
             .channel(nombreCanalNotif)
             .on('postgres_changes', {
@@ -55,7 +79,6 @@ function Notificaciones({ usuario, setVista }) {
             })
             .subscribe();
 
-        // Canal solicitudes (solo admin)
         let canalSol = null;
         if (idRol === 3) {
             canalSol = supabase
@@ -66,7 +89,6 @@ function Notificaciones({ usuario, setVista }) {
                 .subscribe();
         }
 
-        // Canal cambio de rol
         const canalRol = supabase
             .channel(nombreCanalRol)
             .on('postgres_changes', {
@@ -108,7 +130,6 @@ function Notificaciones({ usuario, setVista }) {
 
     async function cargar() {
         try {
-            // Cargar notificaciones
             const res = await fetch(`${API}/notificaciones?id_usuario=${idUsuario}`, { headers });
             if (!res.ok) throw new Error('Error al cargar notificaciones');
             const data = await res.json();
@@ -181,14 +202,6 @@ function Notificaciones({ usuario, setVista }) {
         return `Hace ${d}d`;
     }
 
-    const iconos = {
-        solicitud_aprobada:  '✅',
-        solicitud_rechazada: '❌',
-        censura_obra:        '🚫',
-        advertencia:         '⚠️',
-        mensaje_admin:       '💬',
-    };
-
     return (
         <div className="relative" ref={ref}>
             <button
@@ -220,16 +233,20 @@ function Notificaciones({ usuario, setVista }) {
 
                     <div className="max-h-96 overflow-y-auto">
                         {idRol === 3 && solicitudes.length > 0 && (
-                            <div className="divide-y divide-yellow-100">
+                            <div className="divide-y divide-cyan-100">
                                 {solicitudes.map(sol => (
-                                    <div key={sol.id_solicitud} className="px-4 py-3 bg-yellow-50">
+                                    /* Cambiado de bg-yellow-50 a bg-cyan-50/60 para acoplarse al color de la app */
+                                    <div key={sol.id_solicitud} className="px-4 py-3 bg-cyan-50/60 hover:bg-cyan-50 transition">
                                         <div className="flex items-start gap-2 mb-2">
-                                            <span className="text-lg">⏳</span>
+                                            {/* Icono de Espera Vectorial en color azul/cian */}
+                                            <svg className="w-5 h-5 text-cyan-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
                                             <div>
-                                                <p className="text-sm font-semibold text-yellow-800">
+                                                <p className="text-sm font-semibold text-cyan-950">
                                                     {sol.usuarios?.nombre} {sol.usuarios?.apellido} quiere ser artista
                                                 </p>
-                                                <p className="text-xs text-yellow-600">
+                                                <p className="text-xs text-cyan-600">
                                                     {tiempoRelativo(sol.fecha_solicitud)}
                                                 </p>
                                             </div>
@@ -237,15 +254,21 @@ function Notificaciones({ usuario, setVista }) {
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => aprobarSolicitud(sol)}
-                                                className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-1.5 rounded-lg font-semibold transition"
+                                                className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-1.5 rounded-lg font-semibold transition flex items-center justify-center gap-1"
                                             >
-                                                ✅ Aprobar
+                                                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                Aprobar
                                             </button>
                                             <button
                                                 onClick={() => rechazarSolicitud(sol)}
-                                                className="flex-1 bg-red-400 hover:bg-red-500 text-white text-xs py-1.5 rounded-lg font-semibold transition"
+                                                className="flex-1 bg-red-400 hover:bg-red-500 text-white text-xs py-1.5 rounded-lg font-semibold transition flex items-center justify-center gap-1"
                                             >
-                                                ❌ Rechazar
+                                                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                                Rechazar
                                             </button>
                                         </div>
                                     </div>
@@ -254,8 +277,11 @@ function Notificaciones({ usuario, setVista }) {
                         )}
 
                         {notificaciones.length === 0 && solicitudes.length === 0 && (
-                            <div className="p-8 text-center">
-                                <div className="text-3xl mb-2">🔔</div>
+                            <div className="p-8 text-center flex flex-col items-center justify-center">
+                                {/* Campana vacía en SVG */}
+                                <svg className="w-10 h-10 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
                                 <p className="text-gray-400 text-sm">Sin notificaciones</p>
                             </div>
                         )}
@@ -264,8 +290,13 @@ function Notificaciones({ usuario, setVista }) {
                             <div className="divide-y divide-gray-50">
                                 {notificaciones.map(n => (
                                     <div key={n.id_notificacion} className="flex gap-3 px-4 py-3 hover:bg-gray-50 transition">
-                                        <span className="text-xl flex-shrink-0 mt-0.5">
-                                            {iconos[n.tipo_notificacion] || '📢'}
+                                        <span className="flex-shrink-0 mt-0.5">
+                                            {/* Iconos vectoriales dinámicos */}
+                                            {iconosNotificacion[n.tipo_notificacion] || (
+                                                <svg className="w-5 h-5 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                                                </svg>
+                                            )}
                                         </span>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium text-gray-800 leading-snug">

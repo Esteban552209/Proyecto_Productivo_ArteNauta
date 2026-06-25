@@ -34,7 +34,6 @@ function SolicitarArtista() {
    async function enviar() {
     setEnviando(true);
     try {
-        // ── Verificación en tiempo real antes de insertar ──
         const { data: pendienteExistente, error: errorCheck } = await supabase
             .from("solicitudes")
             .select("id_solicitud")
@@ -46,8 +45,7 @@ function SolicitarArtista() {
         if (errorCheck) throw errorCheck;
 
         if (pendienteExistente) {
-            // Ya existe una pendiente — no se crea otra
-            await cargar(); // refresca el estado para mostrar el aviso correcto
+            await cargar(); 
             Swal.fire({
                 icon: "info",
                 title: "Ya tienes una solicitud pendiente",
@@ -58,7 +56,6 @@ function SolicitarArtista() {
             return;
         }
 
-        // 1. Crear solicitud
         const { error } = await supabase
             .from("solicitudes")
             .insert({
@@ -71,7 +68,6 @@ function SolicitarArtista() {
 
         if (error) throw error;
 
-        // 2. Notificar a todos los admins (id_rol === 3)
         const { data: admins } = await supabase
             .from("usuarios")
             .select("id_usuario")
@@ -117,11 +113,13 @@ function SolicitarArtista() {
 
     if (cargando) return null;
 
-    // Ya tiene solicitud pendiente
+    // Ya tiene solicitud pendiente (Icono de reloj SVG)
     if (solicitud?.estado_solicitud === "pendiente") {
         return (
             <div className="flex gap-3 items-start p-4 bg-yellow-50 border border-yellow-200 rounded-xl mt-4">
-                <span className="text-2xl"></span>
+                <svg className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 <div>
                     <p className="font-semibold text-yellow-800">Solicitud en revisión</p>
                     <p className="text-sm text-yellow-700 mt-1">
@@ -132,11 +130,13 @@ function SolicitarArtista() {
         );
     }
 
-    // Rechazada — puede volver a intentar
+    // Rechazada — puede volver a intentar (Icono de advertencia SVG)
     if (solicitud?.estado_solicitud === "rechazada") {
         return (
             <div className="flex gap-3 items-start p-4 bg-red-50 border border-red-200 rounded-xl mt-4">
-                <span className="text-2xl"></span>
+                <svg className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
                 <div>
                     <p className="font-semibold text-red-800">Solicitud no aprobada</p>
                     <p className="text-sm text-red-700 mt-1">Puedes volver a intentarlo.</p>
@@ -151,7 +151,6 @@ function SolicitarArtista() {
         );
     }
 
-    // Botón inicial
     if (!mostrarForm) {
         return (
             <button
@@ -163,7 +162,6 @@ function SolicitarArtista() {
         );
     }
 
-    // Formulario
     return (
         <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-xl space-y-3">
             <h3 className="font-semibold text-gray-800">Solicitar ser artista</h3>
