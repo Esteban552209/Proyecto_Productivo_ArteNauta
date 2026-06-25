@@ -1,7 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { supabase } from "../config/supabase.js"; 
+import { supabase } from "../config/supabase.js";
 
 const router = express.Router();
 
@@ -12,7 +12,7 @@ router.post("/auth/login", async (req, res) => {
         const { data: usuarioEncontrado, error } = await supabase
             .from("usuarios")
             .select("*")
-            .eq("email", email) 
+            .eq("email", email)
             .maybeSingle();
 
         if (error) throw error;
@@ -27,9 +27,15 @@ router.post("/auth/login", async (req, res) => {
             return res.status(401).json({ mensaje: "Correo o contraseña incorrectos" });
         }
 
+        if (usuarioEncontrado.estado_cuenta === false) {
+            return res.status(403).json({
+                mensaje: "Tu cuenta ha sido desactivada por un administrador. No puedes iniciar sesión."
+            });
+        }
+
         const payload = {
             id_usuario: usuarioEncontrado.id_usuario,
-            id_rol: usuarioEncontrado.id_rol 
+            id_rol: usuarioEncontrado.id_rol
         };
 
         const secretKey = process.env.JWT_SECRET || "mi_clave_super_secreta_desarrollo";
