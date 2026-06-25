@@ -123,4 +123,59 @@ router.delete("/publicaciones/:id", verificarToken, async (req, res) => {
     }
 });
 
+// get publicaciones del perfil
+router.get('/mis-publicaciones/:id_usuario', async (req, res) => {
+    try {
+        const { id_usuario } = req.params
+        const { data, error } = await supabase
+            .from('publicaciones')
+            .select('*')
+            .eq('id_usuario_artista', id_usuario)
+            .order('id_publicacion', { ascending: false })
+
+        if (error) throw error
+        res.json(data)
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
+
+
+// Edita título y descripción de una publicación
+router.put('/publicaciones/:id_publicacion', async (req, res) => {
+    try {
+        const { id_publicacion } = req.params
+        const { titulo, descripcion } = req.body
+
+        const { data, error } = await supabase
+            .from('publicaciones')
+            .update({ titulo, descripcion })
+            .eq('id_publicacion', id_publicacion)
+            .select()
+
+        if (error) throw error
+        res.json({ message: 'Publicación editada correctamente', data: data[0] })
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
+
+// DELETE 
+router.delete('/publicaciones/:id_publicacion', async (req, res) => {
+    try {
+        const { id_publicacion } = req.params
+
+        const { error } = await supabase
+            .from('publicaciones')
+            .delete()
+            .eq('id_publicacion', id_publicacion)
+
+        if (error) throw error
+        res.json({ message: 'Publicación eliminada con éxito' })
+    } catch (err) {
+        res.status(500).json({ error: err.message })
+    }
+})
+
+
 export default router;

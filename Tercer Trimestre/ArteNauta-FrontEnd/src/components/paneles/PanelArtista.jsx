@@ -2,80 +2,71 @@ import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import PerfilUsuario from "./PerfilUsuario";
 import FormPublicaciones from "../FormPublicaciones";
+import PublicacionesCom from "../PublicacionesCom";
 import HeaderPanel from "./HeaderPanel";
 import Conversaciones from "./ModulosConversaciones/VistaChats";
 import Notificaciones from "./Notificaciones";
+
+const API_LOCAL_BACKEND = "http://localhost:3000";
 
 function PanelArtista({ setVista }) {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
     const [seccion, setSeccion] = useState("inicio");
     const [showModal, setShowModal] = useState(false);
     const [obras, setObras] = useState([]);
-
-    const usuarioId = usuario?.id_usuario || usuario?.id;
-
-    // --- CARGAR PUBLICACIONES DESDE BACKEND ---
-    useEffect(() => {
-        const cargarMisObras = async () => {
-            if (!usuarioId) return;
-            try {
-                const res = await fetch(`http://localhost:3000/publicaciones/artista/${usuarioId}`);
-                if (!res.ok) throw new Error("No se pudieron cargar tus obras.");
-                const data = await res.json();
-                setObras(data || []);
-            } catch (error) {
-                console.error("Error cargando obras desde el backend:", error);
-                Swal.fire("Error", "No se pudieron cargar tus obras.", "error");
-            }
-        };
-        cargarMisObras();
-    }, [usuarioId]);
-
-    // --- ELIMINAR PUBLICACIÓN A TRAVES DEL BACKEND ---
-    const handleEliminar = async (id) => {
-        const confirmacion = await Swal.fire({
-            title: "¿Eliminar obra?",
-            text: "Esta acción no se puede deshacer",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#0891b2",
-            confirmButtonText: "Sí, eliminar",
-            cancelButtonText: "Cancelar",
-        });
-
-        if (!confirmacion.isConfirmed) return;
-
+    const [publicaciones, setPublicaciones] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [busqueda, setBusqueda] = useState("");
+    const [filtroFecha, setFiltroFecha] = useState("desc");
+    const [filtroLikes, setFiltroLikes] = useState("");
+    const [showModalFiltros, setShowModalFiltros] = useState(false);
+    const obtenerPublicacionesMuro = async () => {
+        const token = localStorage.getItem("token");
         try {
-            const res = await fetch(`http://localhost:3000/publicaciones/${id}`, {
-                method: "DELETE",
+            setLoading(true);
+            let url = `${API_LOCAL_BACKEND}/Muro-Publicaciones?buscar=${encodeURIComponent(busqueda)}&ordenFecha=${filtroFecha}`;
+            if (filtroLikes) url += `&ordenLikes=${filtroLikes}`;
+
+            const res = await fetch(url, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
             });
 
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || "No se pudo eliminar la obra en el servidor.");
+            if (res.status === 401) {
+                localStorage.removeItem("token");
+                localStorage.removeItem("usuario");
+                Swal.fire({
+                    icon: "warning",
+                    title: "Sesión Expirada",
+                    text: "Tu sesión ha terminado por seguridad. Vuelve a ingresar a ArteNauta.",
+                    confirmButtonColor: "#0891b2",
+                }).then(() => window.location.reload());
+                return;
             }
 
-            // Si se borra con éxito, actualizamos la interfaz
-            setObras((prev) => prev.filter((obra) => (obra.id_publicacion || obra.id) !== id));
-            
-            Swal.fire({
-                title: "Eliminada",
-                text: "Tu publicación fue eliminada correctamente.",
-                icon: "success",
-                confirmButtonColor: "#0891b2",
-                timer: 1500,
-                showConfirmButton: false,
-            });
+            if (!res.ok) throw new Error("Error al obtener las publicaciones del muro");
+            const data = await res.json();
+            setPublicaciones(data);
         } catch (err) {
-            console.error("Error al eliminar:", err);
-            Swal.fire("Error", "No se pudo eliminar la obra.", "error");
+            console.error(err);
+            Swal.fire("Error", "No se pudieron cargar las obras del muro", "error");
+        } finally {
+            setLoading(false);
         }
     };
 
+    useEffect(() => {
+        if (seccion === "inicio") {
+            obtenerPublicacionesMuro();
+        }
+    }, [seccion, busqueda, filtroFecha, filtroLikes]);
+
     const handleNuevaPublicacion = (nueva) => {
         setObras((prev) => [nueva, ...prev]);
-        setShowModal(false); // Cierra el modal automáticamente al subir la obra
+        setShowModal(false);
     };
 
     return (
@@ -86,100 +77,74 @@ function PanelArtista({ setVista }) {
                 setVista={setVista}
                 onSubirArte={() => setShowModal(true)}
             />
+
             <main className="flex-1 p-8 max-w-6xl mx-auto w-full">
                 {seccion === "inicio" && (
                     <div>
-                        <h1 className="text-2xl font-bold text-cyan-800 mb-2">
-                            Bienvenido, {usuario?.nombre}
-                        </h1>
-                        <p className="text-gray-500 mb-8">Tu espacio creativo en ArteNauta</p>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-white rounded-2xl shadow p-6 border-l-4 border-cyan-500">
-                                <p className="text-gray-500 text-sm">Mis obras publicadas</p>
-                                <p className="text-3xl font-bold text-cyan-700 mt-1">{obras.length}</p>
+                        {/* Header con bienvenida y buscador */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                            <div>
+                                <h1 className="text-2xl font-bold text-cyan-800 mb-1">
+                                    Bienvenido, {usuario?.nombre}
+                                </h1>
+                                <p className="text-gray-500 text-sm">Tu espacio creativo en ArteNauta</p>
                             </div>
-                            <div className="bg-white rounded-2xl shadow p-6 border-l-4 border-pink-500">
-                                <p className="text-gray-500 text-sm">Me gusta recibidos</p>
-                                <p className="text-3xl font-bold text-pink-600 mt-1">0</p>
+
+                            {/* ✅ Misma barra de búsqueda que PanelUsuario */}
+                            <div className="flex items-center gap-2 w-full md:w-96">
+                                <input
+                                    type="text"
+                                    placeholder="Buscar por título o descripción..."
+                                    value={busqueda}
+                                    onChange={(e) => setBusqueda(e.target.value)}
+                                    className="w-full px-4 py-2 text-sm border border-cyan-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 bg-white shadow-sm text-gray-700"
+                                />
+                                                                <button
+                                    onClick={() => setShowModalFiltros(true)}
+                                    className="px-3 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition shadow-sm flex items-center gap-1 font-medium text-sm whitespace-nowrap"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    Filtros
+                                </button>
                             </div>
                         </div>
 
-                        <div className="mt-8 bg-white rounded-2xl shadow p-6">
-    <h2 className="text-lg font-bold text-cyan-700 mb-4">Mis Obras</h2>
+                        {/* ✅ Muro de publicaciones — igual que PanelUsuario */}
+                        <div className="bg-white rounded-2xl shadow p-6">
+                            <h2 className="text-lg font-bold text-cyan-700 mb-4">Obras destacadas</h2>
 
-    {obras.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-10 text-gray-400">
-            <svg className="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-            <p className="text-sm mb-4">Aún no has subido ninguna obra.</p>
-            <button
-                onClick={() => setShowModal(true)}
-                className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-lg font-semibold transition"
-            >
-                Subir mi primera obra
-            </button>
-        </div>
-    ) : (
-        /* Cambiamos a un diseño de rejilla (Grid) responsivo y limpio */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {obras.map((obra) => (
-                <div key={obra.id} className="bg-gray-50 border border-gray-200 rounded-xl p-4 relative flex flex-col justify-between shadow-sm hover:shadow-md transition">
-                    
-                    {/* Botón de eliminar posicionado arriba a la derecha */}
-                    <button
-                        onClick={() => handleEliminar(obra.id)}
-                        className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-700 transition z-10"
-                        title="Eliminar obra"
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <polyline points="3 6 5 6 21 6" />
-                            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
-                            <path d="M10 11v6M14 11v6" />
-                            <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
-                        </svg>
-                    </button>
+                            {loading && (
+                                <p className="text-center text-gray-400 py-10">Cargando publicaciones...</p>
+                            )}
 
-                    {/* CONTENEDOR DE LA PREVISUALIZACIÓN DE LA IMAGEN */}
-                    <div className="w-full h-48 flex items-center justify-center overflow-hidden rounded-lg bg-gray-200 mb-4 relative">
-                        {/* IMPORTANTE: Verifica si en tu tabla de Supabase la columna se llama 
-                          "Contenido" (con C mayúscula) o "contenido" (minúscula). 
-                          De igual manera con "Titulo" y "Descripcion".
-                        */}
-                        {obra.Contenido || obra.contenido ? (
-                            <img
-                                src={obra.Contenido || obra.contenido}
-                                alt={obra.Titulo || obra.titulo}
-                                className="w-full h-full object-cover rounded-lg hover:scale-105 transition duration-300"
-                            />
-                        ) : (
-                            /* En caso de que la obra no tenga imagen cargada o la URL falle */
-                            <div className="flex flex-col items-center text-gray-400 text-xs">
-                                <svg className="w-8 h-8 mb-1 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                                Sin vista previa
-                            </div>
-                        )}
-                    </div>
+                            {!loading && publicaciones.length === 0 && (
+                                <p className="text-center text-gray-400 py-10">
+                                    No se encontraron obras que coincidan con los filtros aplicados.
+                                </p>
+                            )}
 
-                    {/* TEXTOS DE LA PUBLICACIÓN */}
-                    <div className="flex-1 min-w-0">
-                        <p className="font-bold text-gray-800 text-base truncate mb-1">
-                            {obra.Titulo || obra.titulo || "Sin título"}
-                        </p>
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                            {obra.Descripcion || obra.descripcion || "Sin descripción proporcionada."}
-                        </p>
-                    </div>
-                    
-                </div>
-            ))}
-        </div>
-    )}
-</div>
+                            {!loading && publicaciones.length > 0 && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                    {publicaciones.map((item) => (
+                                        // ✅ Mismo componente que PanelUsuario, con likes y comentarios
+                                        <PublicacionesCom key={item.id_publicacion || item.id} item={item} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -188,12 +153,63 @@ function PanelArtista({ setVista }) {
                 {seccion === "perfil" && <PerfilUsuario usuario={usuario} setSeccion={setSeccion} />}
             </main>
 
+            {/* Modal subir obra */}
             {showModal && (
                 <FormPublicaciones
                     onNuevaPublicacion={handleNuevaPublicacion}
                     onClose={() => setShowModal(false)}
                     idArtistaActivo={usuario?.id}
                 />
+            )}
+
+            {/* ✅ Modal de filtros — igual que PanelUsuario */}
+            {showModalFiltros && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                    onClick={() => setShowModalFiltros(false)}
+                >
+                    <div
+                        className="bg-white rounded-2xl p-6 w-full max-w-sm mx-4 shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold text-gray-700">Filtros Avanzados</h3>
+                            <button onClick={() => setShowModalFiltros(false)} className="text-gray-400 hover:text-gray-600 font-bold text-lg">✕</button>
+                        </div>
+
+                        <div className="flex flex-col gap-4">
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 block mb-1">Ordenar por Fecha:</label>
+                                <select
+                                    value={filtroFecha}
+                                    onChange={(e) => { setFiltroFecha(e.target.value); setFiltroLikes(""); }}
+                                    className="w-full p-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-400 focus:outline-none bg-white text-gray-700"
+                                >
+                                    <option value="desc">Más recientes primero</option>
+                                    <option value="asc">Más antiguas primero</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 block mb-1">Ordenar por Popularidad (Likes):</label>
+                                <select
+                                    value={filtroLikes}
+                                    onChange={(e) => setFiltroLikes(e.target.value)}
+                                    className="w-full p-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-400 focus:outline-none bg-white text-gray-700"
+                                >
+                                    <option value="">Por defecto</option>
+                                    <option value="desc">Más populares</option>
+                                    <option value="asc">Menos populares</option>
+                                </select>
+                            </div>
+                            <button
+                                onClick={() => setShowModalFiltros(false)}
+                                className="mt-2 w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2 rounded-xl text-sm transition"
+                            >
+                                Aplicar filtros
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
