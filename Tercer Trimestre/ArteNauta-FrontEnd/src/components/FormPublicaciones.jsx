@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-// =========================
-// SIGHTENGINE
-// =========================
 const API_USER = "741146561";
 const API_SECRET = "RD3oJvHzcHqNVqoYkBxT5vmwBDTbC2DD";
 const MODELS = "nudity-2.1,weapon,alcohol,recreational_drug,gore-2.0,violence,self-harm";
@@ -14,9 +11,6 @@ export default function FormPublicaciones({
     idArtistaActivo
 }) {
 
-    // =========================
-    // ESTADOS
-    // =========================
     const [form, setForm] = useState({
         Titulo: "",
         Descripcion: "",
@@ -30,14 +24,11 @@ export default function FormPublicaciones({
     const [exito, setExito] = useState(false);
     const [error, setError] = useState(null);
 
-    // =========================
-    // EFECTO: CARGAR CATEGORÍAS
-    // =========================
     useEffect(() => {
         const obtenerCategorias = async () => {
             try {
                 const token = localStorage.getItem("token");
-                const res = await fetch("http://localhost:3000/Categorias", {
+                const res = await fetch("http://localhost:3000/categorias", {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -48,7 +39,6 @@ export default function FormPublicaciones({
                 if (!res.ok) throw new Error("Error al cargar las categorías fijas.");
 
                 const data = await res.json();
-                // Si tu respuesta viene envuelta en un .data lo extraemos, sino usamos data directo
                 const lista = data.data ? data.data : data;
                 setCategorias(Array.isArray(lista) ? lista : []);
             } catch (err) {
@@ -61,19 +51,13 @@ export default function FormPublicaciones({
         obtenerCategorias();
     }, []);
 
-    // =========================
-    // HANDLE CHANGE
-    // =========================
+
     const handleChange = (e) => {
         setForm({
             ...form,
             [e.target.name]: e.target.value,
         });
     };
-
-    // =========================
-    // VALIDAR IMAGEN (SIGHTENGINE)
-    // =========================
     const validarImagen = async (urlImagen) => {
         try {
             const response = await axios.get(
@@ -120,9 +104,6 @@ export default function FormPublicaciones({
         }
     };
 
-    // =========================
-    // HANDLESUBMIT
-    // =========================
     const handleSubmit = async () => {
         const token = localStorage.getItem("token");
 
@@ -140,7 +121,6 @@ export default function FormPublicaciones({
         setError(null);
 
         try {
-            // 1. Validar Imagen con Sightengine
             if (form.contenido && form.contenido.trim()) {
                 const validacion = await validarImagen(form.contenido.trim());
 
@@ -150,23 +130,19 @@ export default function FormPublicaciones({
                     return; 
                 }
             }
-
-            // 2. Resolver IDs del Usuario de Sesión
             const usuarioSesion = JSON.parse(localStorage.getItem('usuario'));
             const artistaId = idArtistaActivo || usuarioSesion?.id_usuario || usuarioSesion?.id;
 
-            // 3. Estructurar el Payload que se enviará a tu Base de Datos
             const payload = {
                 titulo: form.Titulo,
                 descripcion: form.Descripcion,
                 contenido: form.contenido,
                 id_usuario_artista: artistaId,
-                id_categoria: Number(form.id_categoria) // <-- ENVIADO COMO NÚMERO
+                id_categoria: Number(form.id_categoria)
             };
 
             console.log("Enviando al backend:", payload);
 
-            // 4. Petición POST final
             const res = await fetch("http://localhost:3000/publicaciones", {
                 method: "POST",
                 headers: {
@@ -261,8 +237,8 @@ export default function FormPublicaciones({
                             {loadingCategorias ? "Cargando categorías..." : "Selecciona una categoría"}
                         </option>
                         {categorias.map((cat) => (
-                            <option key={cat.id} value={cat.id}>
-                                {cat.nombre}
+                            <option key={cat.id_categoria} value={cat.id_categoria}>
+                                {cat.nombre_categoria}
                             </option>
                         ))}
                     </select>

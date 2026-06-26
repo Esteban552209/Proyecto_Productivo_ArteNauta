@@ -68,7 +68,7 @@ router.get("/publicaciones/artista/:id_artista", verificarToken, async (req, res
 // POST: Crear una nueva publicación
 router.post("/publicaciones", verificarToken, async (req, res) => {
     try {
-        const { titulo, contenido, descripcion, id_usuario_artista } = req.body;
+        const { titulo, contenido, descripcion, id_usuario_artista, id_categoria } = req.body;
 
         if (!titulo || !id_usuario_artista) {
             return res.status(400).json({ error: "Faltan campos obligatorios (titulo, id_usuario_artista)" });
@@ -82,7 +82,9 @@ router.post("/publicaciones", verificarToken, async (req, res) => {
                     contenido,
                     descripcion,
                     fecha_publicacion: new Date().toISOString(),
-                    id_usuario_artista
+                    id_usuario_artista,
+                    id_categoria
+
                 }
             ])
             .select(`
