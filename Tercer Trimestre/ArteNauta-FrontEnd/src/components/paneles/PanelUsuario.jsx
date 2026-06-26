@@ -1,26 +1,26 @@
-import { useState, useEffect } from 'react';
-import Swal from 'sweetalert2';
+import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 
-import PerfilUsuario from './PerfilUsuario';
-import PublicacionesCom from '../PublicacionesCom';
-import HeaderPanel from './HeaderPanel';
-import Conversaciones from './ModulosConversaciones/VistaChats';
-import Notificaciones from './ModulosConversaciones/../Notificaciones';
+import PerfilUsuario from "./PerfilUsuario";
+import PublicacionesCom from "../PublicacionesCom";
+import HeaderPanel from "./HeaderPanel";
+import Conversaciones from "./ModulosConversaciones/VistaChats";
+import Notificaciones from "./ModulosConversaciones/../Notificaciones";
 
 const API_LOCAL_BACKEND = "http://localhost:3000";
 
 function PanelUsuario({ setVista }) {
-    const usuario = JSON.parse(localStorage.getItem('usuario'));
+    const usuario = JSON.parse(localStorage.getItem("usuario"));
     const [publicaciones, setPublicaciones] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [seccion, setSeccion] = useState('inicio');
+    const [seccion, setSeccion] = useState("inicio");
 
     // ==========================================
     // ESTADOS PARA BÚSQUEDA Y FILTROS AVANZADOS
     // ==========================================
     const [busqueda, setBusqueda] = useState("");
     const [filtroFecha, setFiltroFecha] = useState("desc"); // 'desc' = más recientes, 'asc' = más antiguas
-    const [filtroLikes, setFiltroLikes] = useState("");     // 'desc' = más populares, 'asc' = menos populares, "" = sin orden por likes
+    const [filtroLikes, setFiltroLikes] = useState(""); // 'desc' = más populares, 'asc' = menos populares, "" = sin orden por likes
     const [showModalFiltros, setShowModalFiltros] = useState(false);
 
     const obtenerPublicacionesMuro = async () => {
@@ -39,7 +39,7 @@ function PanelUsuario({ setVista }) {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
+                    Authorization: `Bearer ${token}`,
                 },
             });
 
@@ -61,13 +61,18 @@ function PanelUsuario({ setVista }) {
                 return;
             }
 
-            if (!res.ok) throw new Error("Error al obtener las publicaciones del muro");
+            if (!res.ok)
+                throw new Error("Error al obtener las publicaciones del muro");
 
             const data = await res.json();
             setPublicaciones(data);
         } catch (err) {
             console.error(err);
-            Swal.fire("Error", "No se pudieron cargar las obras del muro", "error");
+            Swal.fire(
+                "Error",
+                "No se pudieron cargar las obras del muro",
+                "error",
+            );
         } finally {
             setLoading(false);
         }
@@ -75,14 +80,13 @@ function PanelUsuario({ setVista }) {
 
     // Agregamos busqueda, filtroFecha y filtroLikes al ciclo de vida del useEffect
     useEffect(() => {
-        if (seccion === 'inicio') {
+        if (seccion === "inicio") {
             obtenerPublicacionesMuro();
         }
     }, [seccion, busqueda, filtroFecha, filtroLikes]);
 
     return (
         <div className="min-h-screen bg-cyan-50 flex flex-col">
-
             <HeaderPanel
                 seccion={seccion}
                 setSeccion={setSeccion}
@@ -90,8 +94,7 @@ function PanelUsuario({ setVista }) {
             />
 
             <main className="flex-1 p-4 max-w-7xl mx-auto w-full">
-
-                {seccion === 'inicio' && (
+                {seccion === "inicio" && (
                     <div>
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                             <div>
@@ -109,14 +112,30 @@ function PanelUsuario({ setVista }) {
                                     type="text"
                                     placeholder="Buscar por título o descripción..."
                                     value={busqueda}
-                                    onChange={(e) => setBusqueda(e.target.value)}
+                                    onChange={(e) =>
+                                        setBusqueda(e.target.value)
+                                    }
                                     className="w-full px-4 py-2 text-sm border border-cyan-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 bg-white shadow-sm text-gray-700"
                                 />
                                 <button
                                     onClick={() => setShowModalFiltros(true)}
                                     className="px-3 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition shadow-sm flex items-center gap-1 font-medium text-sm whitespace-nowrap"
                                 >
-                                    ⚙️ Filtros
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    Filtros
                                 </button>
                             </div>
                         </div>
@@ -134,14 +153,18 @@ function PanelUsuario({ setVista }) {
 
                             {!loading && publicaciones.length === 0 && (
                                 <p className="text-center text-gray-400 py-10">
-                                    No se encontraron obras que coincidan con los filtros aplicados.
+                                    No se encontraron obras que coincidan con
+                                    los filtros aplicados.
                                 </p>
                             )}
 
                             {!loading && publicaciones.length > 0 && (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                     {publicaciones.map((item) => (
-                                        <PublicacionesCom key={item.id_publicacion || item.id} item={item} />
+                                        <PublicacionesCom
+                                            key={item.id_publicacion || item.id}
+                                            item={item}
+                                        />
                                     ))}
                                 </div>
                             )}
@@ -149,33 +172,35 @@ function PanelUsuario({ setVista }) {
                     </div>
                 )}
 
-                {seccion === 'notificaciones' && (
+                {seccion === "notificaciones" && (
                     <Notificaciones usuario={usuario} />
                 )}
 
-                {seccion === 'conversaciones' && (
+                {seccion === "conversaciones" && (
                     <Conversaciones usuario={usuario} />
                 )}
 
-                {seccion === 'perfil' && (
+                {seccion === "perfil" && (
                     <PerfilUsuario usuario={usuario} setSeccion={setSeccion} />
                 )}
             </main>
 
             {/* MODAL DE FILTROS AVANZADOS */}
             {showModalFiltros && (
-                <div 
+                <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
                     onClick={() => setShowModalFiltros(false)}
                 >
-                    <div 
+                    <div
                         className="bg-white rounded-2xl p-6 w-full max-w-sm mx-4 shadow-xl"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold text-gray-700">Filtros Avanzados</h3>
-                            <button 
-                                onClick={() => setShowModalFiltros(false)} 
+                            <h3 className="text-lg font-bold text-gray-700">
+                                Filtros Avanzados
+                            </h3>
+                            <button
+                                onClick={() => setShowModalFiltros(false)}
                                 className="text-gray-400 hover:text-gray-600 font-bold text-lg"
                             >
                                 ✕
@@ -185,7 +210,9 @@ function PanelUsuario({ setVista }) {
                         <div className="flex flex-col gap-4">
                             {/* RECOPILAR ORDEN POR FECHA */}
                             <div>
-                                <label className="text-xs font-semibold text-gray-500 block mb-1">Ordenar por Fecha:</label>
+                                <label className="text-xs font-semibold text-gray-500 block mb-1">
+                                    Ordenar por Fecha:
+                                </label>
                                 <select
                                     value={filtroFecha}
                                     onChange={(e) => {
@@ -194,22 +221,37 @@ function PanelUsuario({ setVista }) {
                                     }}
                                     className="w-full p-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-400 focus:outline-none bg-white text-gray-700"
                                 >
-                                    <option value="desc">Más recientes primero</option>
-                                    <option value="asc">Más antiguas primero</option>
+                                    <option value="desc">
+                                        Más recientes primero
+                                    </option>
+                                    <option value="asc">
+                                        Más antiguas primero
+                                    </option>
                                 </select>
                             </div>
 
                             {/* RECOPILAR ORDEN POR LIKES */}
                             <div>
-                                <label className="text-xs font-semibold text-gray-500 block mb-1">Ordenar por Popularidad (Likes):</label>
+                                <label className="text-xs font-semibold text-gray-500 block mb-1">
+                                    Ordenar por Popularidad (Likes):
+                                </label>
                                 <select
                                     value={filtroLikes}
-                                    onChange={(e) => setFiltroLikes(e.target.value)}
+                                    onChange={(e) =>
+                                        setFiltroLikes(e.target.value)
+                                    }
                                     className="w-full p-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-400 focus:outline-none bg-white text-gray-700"
                                 >
-                                    <option value="">Por defecto (Sin aplicar filtro de likes)</option>
-                                    <option value="desc">Más populares (Mayor a menor)</option>
-                                    <option value="asc">Menos populares (Menor a mayor)</option>
+                                    <option value="">
+                                        Por defecto (Sin aplicar filtro de
+                                        likes)
+                                    </option>
+                                    <option value="desc">
+                                        Más populares (Mayor a menor)
+                                    </option>
+                                    <option value="asc">
+                                        Menos populares (Menor a mayor)
+                                    </option>
                                 </select>
                             </div>
 

@@ -11,7 +11,7 @@ router.get("/:id_conversacion", verificarToken, async (req, res) => {
     try {
         const { id_conversacion } = req.params;
 
-        // Trae los mensajes adaptados a tus 4 columnas reales
+        // Trae los mensajes adaptados a las 4 columnas reales
         const { data, error } = await supabase
             .from("mensajes")
             .select(`
@@ -95,6 +95,40 @@ router.patch('/:id_mensaje', async (req, res) => {
 
     } catch (err) {
         return res.status(500).json({ error: 'Error interno del servidor.' });
+    }
+});
+
+// El método DELETE para eliminar un mensaje por su ID
+router.delete('/:id_mensaje', async (req, res) => {
+    const { id_mensaje } = req.params;
+
+    try {
+        // Ejecutamos la eliminación en la tabla 'mensajes' filtrando por id_mensaje
+        const { data, error } = await supabase
+            .from('mensajes')
+            .delete()
+            .eq('id_mensaje', id_mensaje)
+            .select(); // El .select() sirve para que Supabase nos devuelva el registro que acabamos de borrar
+
+        // Si Supabase devuelve un error, respondemos con un 400
+        if (error) {
+            return res.status(400).json({ error: error.message });
+        }
+
+        // Si la data viene vacía, significa que el id_mensaje no existía en la base de datos
+        if (!data || data.length === 0) {
+            return res.status(404).json({ error: "El mensaje no existe o ya fue eliminado" });
+        }
+
+        // Si todo sale bien, respondemos con un 200 y el mensaje de éxito
+        return res.status(200).json({
+            mensaje: "Mensaje eliminado con éxito",
+            data: data[0]
+        });
+
+    } catch (error) {
+        console.error("Error en el servidor:", error);
+        return res.status(500).json({ error: "Error interno del servidor" });
     }
 });
 

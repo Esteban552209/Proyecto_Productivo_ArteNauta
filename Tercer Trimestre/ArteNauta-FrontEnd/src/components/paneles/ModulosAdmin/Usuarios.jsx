@@ -4,15 +4,23 @@ const API_LOCAL_USUARIOS = "http://localhost:3000";
 
 function Usuarios() {
     const [usuarios, setUsuarios] = useState([]);
-
     const [filtro, setFiltro] = useState("todos");
+    const [busqueda, setBusqueda] = useState("");
+    const [rol, setRol] = useState("");
+    const [showModalFiltros, setShowModalFiltros] = useState(false);
 
     const obtenerUsuarios = async () => {
         const token = localStorage.getItem("token");
 
         try {
+            const params = new URLSearchParams();
+
+            if (filtro !== "todos") params.append("estado", filtro);
+            if (busqueda.trim() !== "") params.append("buscar", busqueda);
+            if (rol !== "") params.append("rol", rol);
+
             const res = await fetch(
-                `${API_LOCAL_USUARIOS}/usuarios?estado=${filtro}`,
+                `${API_LOCAL_USUARIOS}/usuarios?${params.toString()}`,
                 {
                     method: "GET",
                     headers: {
@@ -34,7 +42,7 @@ function Usuarios() {
 
     useEffect(() => {
         obtenerUsuarios();
-    }, [filtro]);
+    }, [filtro, busqueda, rol]);
 
     const handleEditar = async (usuario) => {
         const { value: formValues } = await Swal.fire({
@@ -61,9 +69,9 @@ function Usuarios() {
                     <div class="w-1/2">
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Rol</label>
                         <select id="swal-rol" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 bg-white">
-                            <option value="3" ${usuario.id_rol === 3 ? "selected" : ""}>Administrador</option>
-                            <option value="2" ${usuario.id_rol === 2 ? "selected" : ""}>Artista</option>
-                            <option value="1" ${usuario.id_rol === 1 ? "selected" : ""}>Usuario Final</option>
+                            <option value="3" ${usuario.roles?.id_rol === 3 ? "selected" : ""}>Administrador</option>
+                            <option value="2" ${usuario.roles?.id_rol === 2 ? "selected" : ""}>Artista</option>
+                            <option value="1" ${usuario.roles?.id_rol === 1 ? "selected" : ""}>Usuario Final</option>
                         </select>
                     </div>
                 </div>
@@ -78,7 +86,8 @@ function Usuarios() {
                 return {
                     nombre: document.getElementById("swal-nombre").value,
                     apellido: document.getElementById("swal-apellido").value,
-                    estado_cuenta: document.getElementById("swal-estado").value === "true",
+                    estado_cuenta:
+                        document.getElementById("swal-estado").value === "true",
                     id_rol: document.getElementById("swal-rol").value,
                 };
             },
@@ -94,17 +103,20 @@ function Usuarios() {
                         method: "PATCH",
                         headers: {
                             "Content-Type": "application/json",
-                            "Authorization": `Bearer ${token}`, 
+                            Authorization: `Bearer ${token}`,
                         },
                         body: JSON.stringify(formValues),
                     },
                 );
                 if (res.status === 401) return window.location.reload();
-                if (!res.ok) throw new Error("No se pudo actualizar el usuario");
+                if (!res.ok)
+                    throw new Error("No se pudo actualizar el usuario");
                 const usuarioActualizado = await res.json();
                 setUsuarios(
                     usuarios.map((u) =>
-                        u.id_usuario === usuario.id_usuario ? usuarioActualizado : u,
+                        u.id_usuario === usuario.id_usuario
+                            ? usuarioActualizado
+                            : u,
                     ),
                 );
                 Swal.fire({
@@ -126,37 +138,36 @@ function Usuarios() {
                     Usuarios registrados
                 </h2>
 
-                <div className="flex gap-4 mb-6">
-                    <button
-                        onClick={() => setFiltro("todos")}
-                        className={`px-4 py-2 rounded-lg font-medium transition ${
-                            filtro === "todos"
-                                ? "bg-cyan-600 text-white shadow-md"
-                                : "bg-white text-cyan-600 border border-cyan-600 hover:bg-cyan-50"
-                        }`}
-                    >
-                        Todos
-                    </button>
-                    <button
-                        onClick={() => setFiltro("true")}
-                        className={`px-4 py-2 rounded-lg font-medium transition ${
-                            filtro === "true"
-                                ? "bg-green-900 text-white shadow-md"
-                                : "bg-white text-green-700 border border-green-700 hover:bg-green-50"
-                        }`}
-                    >
-                        Activos
-                    </button>
-                    <button
-                        onClick={() => setFiltro("false")}
-                        className={`px-4 py-2 rounded-lg font-medium transition ${
-                            filtro === "false"
-                                ? "bg-red-900 text-white shadow-md"
-                                : "bg-white text-red-700 border border-red-700 hover:bg-red-50"
-                        }`}
-                    >
-                        Desactivados
-                    </button>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                        <input
+                            type="text"
+                            placeholder="Buscar nombre, apellido o email..."
+                            value={busqueda}
+                            onChange={(e) => setBusqueda(e.target.value)}
+                            className="w-full md:w-80 px-4 py-2 text-sm border border-cyan-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 bg-white shadow-sm text-gray-700"
+                        />
+                        <button
+                            onClick={() => setShowModalFiltros(true)}
+                            className="px-4 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition shadow-sm flex items-center gap-2 font-medium text-sm whitespace-nowrap"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            Filtros
+                        </button>
+                    </div>
                 </div>
 
                 <table className="w-full text-sm rounded-3xl shadow">
@@ -177,7 +188,7 @@ function Usuarios() {
                     <tbody>
                         {usuarios.map((u, i) => (
                             <tr
-                                key={u.id}
+                                key={u.id_usuario}
                                 className={
                                     i % 2 === 0 ? "bg-white" : "bg-gray-50"
                                 }
@@ -215,13 +226,12 @@ function Usuarios() {
                                 <td className="px-6 py-3">
                                     <span
                                         className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                            u.roles.nombre_rol ===
+                                            u.roles?.nombre_rol ===
                                             "Administrador"
                                                 ? "bg-cyan-100 text-cyan-800"
-                                                : u.roles?.nombre_rol ===
-                                                    "Artista"
-                                                    ? "bg-purple-100 text-purple-800"
-                                                    : "bg-gray-100 text-green-600"
+                                                : u.roles?.nombre_rol === "Artista"
+                                                ? "bg-purple-100 text-purple-800"
+                                                : "bg-gray-100 text-green-600"
                                         }`}
                                     >
                                         {u.roles?.nombre_rol}
@@ -251,6 +261,74 @@ function Usuarios() {
                     </tbody>
                 </table>
             </div>
+
+            {showModalFiltros && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                    onClick={() => setShowModalFiltros(false)}
+                >
+                    <div
+                        className="bg-white rounded-2xl p-6 w-full max-w-sm mx-4 shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold text-gray-700">
+                                Filtros Avanzados
+                            </h3>
+                            <button
+                                onClick={() => setShowModalFiltros(false)}
+                                className="text-gray-400 hover:text-gray-600 font-bold text-lg"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="flex flex-col gap-4">
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 block mb-1">
+                                    Estado de la cuenta:
+                                </label>
+                                <select
+                                    value={filtro}
+                                    onChange={(e) => setFiltro(e.target.value)}
+                                    className="w-full p-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-400 focus:outline-none bg-white text-gray-700"
+                                >
+                                    <option value="todos">
+                                        Todos los usuarios
+                                    </option>
+                                    <option value="true">Solo Activos</option>
+                                    <option value="false">
+                                        Solo Desactivados
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-semibold text-gray-500 block mb-1">
+                                    Rol de usuario:
+                                </label>
+                                <select
+                                    value={rol}
+                                    onChange={(e) => setRol(e.target.value)}
+                                    className="w-full p-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-400 focus:outline-none bg-white text-gray-700"
+                                >
+                                    <option value="">Todos los roles</option>
+                                    <option value="3">Administradores</option>
+                                    <option value="2">Artistas</option>
+                                    <option value="1">Usuarios Finales</option>
+                                </select>
+                            </div>
+
+                            <button
+                                onClick={() => setShowModalFiltros(false)}
+                                className="mt-2 w-full bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-2 rounded-xl text-sm transition"
+                            >
+                                Aplicar filtros
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </section>
     );
 }

@@ -1,11 +1,20 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
 
-function LoginModal({ isOpen, onClose, setVista }) {
+function LoginModal({ isOpen, onClose, setVista, alCambiarAModalRegistro }) {
+    const [isClosing, setIsClosing] = useState(false);
     const [correo, setCorreo] = useState("");
     const [password, setPassword] = useState("");
     
-    if (!isOpen) return null;
+    if (!isOpen && !isClosing) return null;
+
+    const manejarCierre = () => {
+        setIsClosing(true); 
+        setTimeout(() => {
+            onClose(); 
+            setIsClosing(false); 
+        }, 300); 
+    };
 
     const manejarLogin = async (e) => {
         e.preventDefault();
@@ -43,7 +52,7 @@ function LoginModal({ isOpen, onClose, setVista }) {
                 Swal.fire({
                     icon: "error",
                     title: "Ups...",
-                    text: "Correo o contraseña incorrectos",
+                    text: data.mensaje || "Ocurrió un error al iniciar sesión",
                     confirmButtonColor: "#0891b2",
                     confirmButtonText: "Intentar de nuevo",
                 });
@@ -60,9 +69,9 @@ function LoginModal({ isOpen, onClose, setVista }) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={onClose}>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-8 relative animate-fadeIn" onClick={(e) => e.stopPropagation()}>
-                <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl cursor-pointer">
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm animar-fondo" style={{ backgroundColor: "rgba(0,0,0,0.5)" }} onClick={onClose}>
+            <div className={`bg-white rounded-2xl shadow-xl w-full max-w-md p-8 relative ${isClosing ? "animar-pop-salida" : "animar-pop"}`} onClick={(e) => e.stopPropagation()}>
+                <button onClick={manejarCierre} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl animar-pop">
                     ✕
                 </button>
                 <h2 className="text-2xl font-bold text-center text-cyan-600 mb-1">
@@ -94,7 +103,7 @@ function LoginModal({ isOpen, onClose, setVista }) {
                     </form>
                     <p className="text-center text-sm text-gray-500">
                         ¿No tienes cuenta? {" "}
-                        <span className="text-cyan-600 hover:underline cursor-pointer font-medium">
+                        <span onClick={alCambiarAModalRegistro} className="text-cyan-600 hover:underline cursor-pointer font-medium">
                             Regístrate
                         </span>
                     </p>

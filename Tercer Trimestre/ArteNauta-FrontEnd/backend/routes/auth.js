@@ -1,6 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import { supabase } from "../config/supabase.js"; 
+import bcrypt from "bcrypt";
+import { supabase } from "../config/supabase.js";
 
 const router = express.Router();
 
@@ -11,8 +12,7 @@ router.post("/auth/login", async (req, res) => {
         const { data: usuarioEncontrado, error } = await supabase
             .from("usuarios")
             .select("*")
-            .eq("email", email) 
-            .eq("clave", password)
+            .eq("email", email)
             .maybeSingle();
 
         if (error) throw error;
@@ -21,9 +21,21 @@ router.post("/auth/login", async (req, res) => {
             return res.status(401).json({ mensaje: "Correo o contraseña incorrectos" });
         }
 
+        const passwordValida = await bcrypt.compare(password, usuarioEncontrado.clave);
+
+        if (!passwordValida) {
+            return res.status(401).json({ mensaje: "Correo o contraseña incorrectos" });
+        }
+
+        if (usuarioEncontrado.estado_cuenta === false) {
+            return res.status(403).json({
+                mensaje: "Tu cuenta ha sido desactivada por un administrador. No puedes iniciar sesión."
+            });
+        }
+
         const payload = {
-            id: usuarioEncontrado.id,
-            id_rol: usuarioEncontrado.id_rol 
+            id_usuario: usuarioEncontrado.id_usuario,
+            id_rol: usuarioEncontrado.id_rol
         };
 
         const secretKey = process.env.JWT_SECRET || "mi_clave_super_secreta_desarrollo";
@@ -32,7 +44,12 @@ router.post("/auth/login", async (req, res) => {
         res.status(200).json({
             mensaje: "Inicio de sesión exitoso",
             token: token,
-            usuario: usuarioEncontrado
+            usuario: {
+                id_usuario: usuarioEncontrado.id_usuario,
+                nombre: usuarioEncontrado.nombre,
+                email: usuarioEncontrado.email,
+                id_rol: usuarioEncontrado.id_rol
+            }
         });
 
     } catch (error) {
