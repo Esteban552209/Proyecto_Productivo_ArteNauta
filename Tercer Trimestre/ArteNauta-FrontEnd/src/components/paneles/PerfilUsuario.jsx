@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
 import { supabase } from "../../lib/supabase";
+import MisObras from "./MisObras";
 
 function PerfilUsuario({ usuario, setSeccion }) {
     const [datosActuales, setDatosActuales] = useState(usuario);
@@ -14,17 +15,15 @@ function PerfilUsuario({ usuario, setSeccion }) {
     });
 
     const inicial = (datosActuales?.nombre || "U")[0].toUpperCase();
-
-    // id_rol: 1=Usuario_Final, 2=Artista, 3=Administrador
     const rolMap = { 1: "Usuario Final", 2: "Artista", 3: "Admin" };
     const rolLabel = rolMap[datosActuales?.id_rol] || "usuario";
     const rolKey = { 1: "usuario", 2: "artista", 3: "admin" }[datosActuales?.id_rol] || "usuario";
-
     const rolColor = {
         admin: "bg-red-100 text-red-700 border border-red-300",
         artista: "bg-cyan-100 text-cyan-700 border border-cyan-300",
         usuario: "bg-green-100 text-green-700 border border-green-300",
     };
+    const token = localStorage.getItem("token");
 
     const handleGuardar = async () => {
         const usuarioActualizado = { ...datosActuales, ...formData };
@@ -56,7 +55,6 @@ function PerfilUsuario({ usuario, setSeccion }) {
         });
     };
 
-    // Solicitar ser artista — solo para Usuario_Final (id_rol === 1)
     const handleSolicitarArtista = async () => {
         const confirm = await Swal.fire({
             title: "¿Solicitar ser artista?",
@@ -73,7 +71,6 @@ function PerfilUsuario({ usuario, setSeccion }) {
 
         setSolicitando(true);
         try {
-            // Verificar si ya hay solicitud pendiente
             const { data: existentes, error: errCheck } = await supabase
                 .from("solicitudes")
                 .select("id_solicitud")
@@ -92,7 +89,6 @@ function PerfilUsuario({ usuario, setSeccion }) {
                 return;
             }
 
-            // Insertar la solicitud
             const { error: errInsert } = await supabase
                 .from("solicitudes")
                 .insert({
@@ -113,7 +109,6 @@ function PerfilUsuario({ usuario, setSeccion }) {
                 showConfirmButton: false,
             });
         } catch (error) {
-            console.error(error);
             Swal.fire({
                 icon: "error",
                 title: "Error",
@@ -126,12 +121,11 @@ function PerfilUsuario({ usuario, setSeccion }) {
     };
 
     return (
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
             <h1 className="text-2xl font-bold text-cyan-800 mb-6">Mi Perfil</h1>
 
             {/* Tarjeta perfil */}
             <div className="bg-white rounded-2xl shadow p-6 mb-6 flex flex-col sm:flex-row gap-6 items-start">
-                {/* Avatar */}
                 <div className="flex flex-col items-center gap-2 min-w-[90px]">
                     <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-800 flex items-center justify-center text-white text-3xl font-bold shadow">
                         {inicial}
@@ -141,7 +135,6 @@ function PerfilUsuario({ usuario, setSeccion }) {
                     </span>
                 </div>
 
-                {/* Info / Formulario */}
                 <div className="flex-1 w-full">
                     {editando ? (
                         <div className="flex flex-col gap-3">
@@ -152,7 +145,6 @@ function PerfilUsuario({ usuario, setSeccion }) {
                                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
                                         value={formData.nombre}
                                         onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                                        placeholder="Nombre"
                                     />
                                 </div>
                                 <div>
@@ -161,7 +153,6 @@ function PerfilUsuario({ usuario, setSeccion }) {
                                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
                                         value={formData.apellido}
                                         onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                                        placeholder="Apellido"
                                     />
                                 </div>
                             </div>
@@ -172,7 +163,6 @@ function PerfilUsuario({ usuario, setSeccion }) {
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="Email"
                                 />
                             </div>
                             <div>
@@ -182,20 +172,13 @@ function PerfilUsuario({ usuario, setSeccion }) {
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
                                     value={formData.telefono}
                                     onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                                    placeholder="Teléfono"
                                 />
                             </div>
                             <div className="flex gap-2 mt-1">
-                                <button
-                                    onClick={handleGuardar}
-                                    className="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition"
-                                >
+                                <button onClick={handleGuardar} className="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition">
                                     Guardar
                                 </button>
-                                <button
-                                    onClick={() => setEditando(false)}
-                                    className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-5 py-2 rounded-lg text-sm font-semibold transition"
-                                >
+                                <button onClick={() => setEditando(false)} className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-5 py-2 rounded-lg text-sm font-semibold transition">
                                     Cancelar
                                 </button>
                             </div>
@@ -216,10 +199,7 @@ function PerfilUsuario({ usuario, setSeccion }) {
                                     <span><span className="font-medium">Teléfono:</span> {datosActuales.telefono}</span>
                                 )}
                             </div>
-                            <button
-                                onClick={() => setEditando(true)}
-                                className="border border-gray-300 hover:border-cyan-500 hover:text-cyan-600 text-gray-500 px-4 py-2 rounded-lg text-sm font-semibold transition"
-                            >
+                            <button onClick={() => setEditando(true)} className="border border-gray-300 hover:border-cyan-500 hover:text-cyan-600 text-gray-500 px-4 py-2 rounded-lg text-sm font-semibold transition">
                                 Editar Perfil
                             </button>
                         </div>
@@ -227,34 +207,37 @@ function PerfilUsuario({ usuario, setSeccion }) {
                 </div>
             </div>
 
-            {/* Botón Solicitar ser Artista — solo Usuario_Final (id_rol === 1) */}
+            {/* Solicitar ser Artista — solo Usuario_Final */}
             {datosActuales?.id_rol === 1 && (
                 <div className="bg-white rounded-2xl shadow p-6 mb-6">
                     <div className="flex items-center gap-3 mb-3">
-                        <span className="text-2xl"></span>
+                        <span className="text-2xl">🎨</span>
                         <div>
                             <h3 className="font-bold text-gray-800 text-sm">¿Quieres ser Artista?</h3>
-                            <p className="text-xs text-gray-400">
-                                Solicita el cambio de rol al administrador y podrás publicar tus obras.
-                            </p>
+                            <p className="text-xs text-gray-400">Solicita el cambio de rol al administrador.</p>
                         </div>
                     </div>
                     <button
                         onClick={handleSolicitarArtista}
                         disabled={solicitando}
-                        className="w-full border-2 border-dashed border-cyan-300 hover:border-cyan-500 hover:bg-cyan-50 text-cyan-600 hover:text-cyan-700 py-3 rounded-xl font-semibold transition text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full border-2 border-dashed border-cyan-300 hover:border-cyan-500 hover:bg-cyan-50 text-cyan-600 py-3 rounded-xl font-semibold transition text-sm disabled:opacity-50"
                     >
-                        {solicitando ? "Enviando solicitud..." : " Solicitar ser Artista"}
+                        {solicitando ? "Enviando solicitud..." : "Solicitar ser Artista"}
                     </button>
                 </div>
             )}
 
+            {/* ✅ MisObras es ahora un componente separado — solo visible para artistas */}
+            {datosActuales?.id_rol === 2 && (
+                <MisObras
+                    idUsuario={datosActuales?.id_usuario || datosActuales?.id}
+                    token={token}
+                />
+            )}
+
             {setSeccion && (
-                <button
-                    onClick={() => setSeccion("inicio")}
-                    className="text-sm text-cyan-600 hover:underline"
-                >
-                    ← Volver al inicio
+                <button onClick={() => setSeccion("inicio")} className="text-sm text-cyan-600 hover:underline mt-2 block">
+                    &larr; Volver al inicio
                 </button>
             )}
         </div>
