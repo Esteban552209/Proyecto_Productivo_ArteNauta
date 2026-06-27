@@ -37,51 +37,51 @@ function BuscarUsuario({ usuario, onChatIniciado }) {
     };
 
     const iniciarChat = () => {
-        const targetId = resultado?.id_usuario || resultado?.id;
+    const targetId = resultado?.id_usuario || resultado?.id;
 
-        if (!usuarioId || !targetId) return;
+    if (!usuarioId || !targetId) return;
 
-        fetch(`${API}/participantes`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                id_usuario: usuarioId,
-                id_participante: targetId,
-            }),
+    fetch(`${API}/conversaciones`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            id_usuario_1: usuarioId,
+            id_usuario_2: targetId,
+        }),
+    })
+        .then((res) => {
+            if (!res.ok) throw new Error("No se pudo iniciar la conversación");
+            return res.json();
         })
-            .then((res) => {
-                if (!res.ok) throw new Error("No se pudo iniciar la conversación");
-                return res.json();
-            })
-            .then((data) => {
-                const nombreOtro = `${resultado.nombre} ${resultado.apellido || ""}`.trim();
-                if (data.existe) {
-                    Swal.fire({
-                        title: "Chat ya existe",
-                        text: `Ya tienes una conversación con ${nombreOtro}`,
-                        icon: "info",
-                        confirmButtonColor: "#0891b2",
-                        timer: 2000,
-                        showConfirmButton: false,
-                    });
-                } else {
-                    Swal.fire({
-                        title: "¡Chat creado!",
-                        text: `Ahora puedes chatear con ${nombreOtro}`,
-                        icon: "success",
-                        confirmButtonColor: "#0891b2",
-                        timer: 2000,
-                        showConfirmButton: false,
-                    });
-                }
-                limpiar();
-                onChatIniciado(data.id_conversacion, nombreOtro);
-            })
-            .catch((err) => {
-                console.error(err);
-                Swal.fire("Error", "No se pudo iniciar el chat.", "error");
-            });
-    };
+        .then((data) => {
+            const nombreOtro = `${resultado.nombre} ${resultado.apellido || ""}`.trim();
+            if (data.existe) {
+                Swal.fire({
+                    title: "Chat ya existe",
+                    text: `Ya tienes una conversación con ${nombreOtro}`,
+                    icon: "info",
+                    confirmButtonColor: "#0891b2",
+                    timer: 2000,
+                    showConfirmButton: false,
+                });
+            } else {
+                Swal.fire({
+                    title: "¡Chat creado!",
+                    text: `Ahora puedes chatear con ${nombreOtro}`,
+                    icon: "success",
+                    confirmButtonColor: "#0891b2",
+                    timer: 2000,
+                    showConfirmButton: false,
+                });
+            }
+            limpiar();
+            onChatIniciado(data.id_conversacion, nombreOtro);
+        })
+        .catch((err) => {
+            console.error(err);
+            Swal.fire("Error", "No se pudo iniciar el chat.", "error");
+        });
+};
 
     // Limpia el input y el resultado
     const limpiar = () => {
