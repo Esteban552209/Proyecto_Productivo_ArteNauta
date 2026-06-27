@@ -111,15 +111,57 @@ router.get("/mensajes/:id_conversacion", async (req, res) => {
 router.post("/mensajes", async (req, res) => {
     try {
         const { id_conversacion, id_usuario, contenido } = req.body;
-        if (!id_conversacion || !id_usuario || !contenido) return res.status(400).json({ error: "Faltan campos" });
 
-        const { data, error } = await supabase
-            .from("mensajes").insert({ id_conversacion, id_usuario, contenido, fecha_envio: new Date().toISOString() }).select("*").single();
-        if (error) throw error;
-        res.status(201).json(data);
+        if (!id_conversacion || !id_usuario || !contenido) {
+            return res.status(400).json({ error: "Datos incompletos" });
+        }
+
+        // 1. Guardar el mensaje en la tabla 'mensajes'
+        const { data: nuevoMensaje, error: errorMensaje } = await supabase
+            .from("mensajes")
+            .insert([{ 
+                id_conversacion, 
+                id_usuario, 
+                contenido, 
+                fecha_envio: new Date().toISOString() 
+            }])
+            .select()
+            .single();
+
+        if (errorMensaje) throw errorMensaje;
+
+        // 2. Buscar al OTRO participante de esta conversación en la tabla 'participantes'
+        const { data: otrosParticipantes, error: errorParticipantes } = await supabase
+            .from("participantes")
+            .select("id_usuario")
+            .eq("id_conversacion", id_conversacion)
+            .neq("id_usuario", id_usuario); // Trae los que NO sean el usuario que escribe
+
+        if (errorParticipantes) throw errorParticipantes;
+
+        // 3. Si encontramos al otro usuario, le creamos su notificación
+        if (otrosParticipantes && otrosParticipantes.length > 0) {
+            const idReceptor = otrosParticipantes[0].id_usuario;
+
+            const { error: errorNotif } = await supabase
+                .from("notificaciones")
+                .insert({
+                    id_usuario: idReceptor, // ID de la otra persona
+                    asunto: "Tienes un nuevo mensaje en el chat",
+                    tipo_notificacion: "Mensaje", // Verifica que este string sea válido en tu columna tipo_notificacion
+                    fecha_notificacion: new Date().toISOString()
+                });
+
+            if (errorNotif) {
+                console.error("Aviso: El mensaje se envió pero la notificación falló:", errorNotif.message);
+            }
+        }
+
+        // 4. Devolver el mensaje creado exitosamente
+        res.status(201).json(nuevoMensaje);
+
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
-
 export default router;
