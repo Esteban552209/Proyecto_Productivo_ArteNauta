@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const API_USER = "741146561";
-const API_SECRET = "RD3oJvHzcHqNVqoYkBxT5vmwBDTbC2DD";
-const MODELS = "nudity-2.1,weapon,alcohol,recreational_drug,gore-2.0,violence,self-harm";
-
 export default function FormPublicaciones({
     onNuevaPublicacion,
     onClose,
@@ -58,48 +54,26 @@ export default function FormPublicaciones({
             [e.target.name]: e.target.value,
         });
     };
-    const validarImagen = async (urlImagen) => {
+const validarImagen = async (contenido) => {
         try {
-            const response = await axios.get(
-                "https://api.sightengine.com/1.0/check.json",
+            const token = localStorage.getItem("token");
+            const response = await axios.post(
+                "http://localhost:3000/validar-imagen", 
+                { contenido },
                 {
-                    params: {
-                        url: urlImagen,
-                        models: MODELS,
-                        api_user: API_USER,
-                        api_secret: API_SECRET,
-                    },
-                },
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(token && { "Authorization": `Bearer ${token}` })
+                    }
+                }
             );
+            return response.data; 
 
-            const data = response.data;
-            console.log("Resultado Sightengine:", data);
-
-            if (data.status === "failure") {
-                return {
-                    segura: false,
-                    motivo: `Error de Sightengine: ${data.error.message}`,
-                };
-            }
-
-            const nudity = data.nudity?.raw ?? 0;
-            const violence = data.violence?.prob ?? 0;
-            const gore = data.gore?.prob ?? 0;
-            const drugs = data.recreational_drug?.prob ?? 0;
-
-            if (nudity > 0.5 || violence > 0.5 || gore > 0.5 || drugs > 0.5) {
-                return {
-                    segura: false,
-                    motivo: "La imagen contiene contenido inapropiado y no cumple con las normas de ArteNauta.",
-                };
-            }
-
-            return { segura: true };
         } catch (err) {
-            console.error("Error completo de Sightengine:", err);
+            console.error("Error llamando a la validación del backend:", err);
             return {
                 segura: false,
-                motivo: "No fue posible analizar la imagen. Asegúrate de que sea una URL pública válida.",
+                motivo: err.response?.data?.motivo || "Error al conectar con el servidor de validación.",
             };
         }
     };
