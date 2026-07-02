@@ -68,4 +68,50 @@ router.post("/comentarios", verificarToken, async (req, res) => {
     }
 });
 
+// GET: Obtener TODOS los comentarios de la plataforma (Para la tabla de Admin)
+router.get("/admin/comentarios", verificarToken, async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from("comentarios")
+            .select(`
+                *,
+                usuarios (
+                    id_usuario,
+                    nombre,
+                    email
+                ),
+                publicaciones (
+                    id_publicacion,
+                    titulo
+                )
+            `)
+            .order("fecha_comentario", { ascending: false }); // Los más recientes primero
+
+        if (error) throw error;
+
+        res.status(200).json(data || []);
+    } catch (error) {
+        console.error("Error en GET /admin/comentarios:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// DELETE: Eliminar un comentario específico por su ID
+router.delete("/comentarios/:id_comentario", verificarToken, async (req, res) => {
+    try {
+        const { id_comentario } = req.params;
+        const { error } = await supabase
+            .from("comentarios")
+            .delete()
+            .eq("id_comentario", id_comentario);
+
+        if (error) throw error;
+
+        res.status(200).json({ mensaje: "Comentario eliminado con éxito" });
+    } catch (error) {
+        console.error("Error en DELETE /comentarios/:id_comentario:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default router;

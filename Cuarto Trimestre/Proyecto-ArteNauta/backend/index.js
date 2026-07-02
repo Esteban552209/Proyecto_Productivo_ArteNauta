@@ -10,6 +10,7 @@ import conversacionesRoutes from "./routes/conversaciones.js";
 import estadisticasRoutes from "./routes/estadisticas.js";
 import categoriasRoutes from "./routes/categorias.js"
 import perfilesRoutes from "./routes/perfiles.js"
+import reaccionesRoutes from "./routes/reacciones.js"
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use(conversacionesRoutes);
 app.use(estadisticasRoutes);
 app.use(categoriasRoutes);
 app.use(perfilesRoutes)
+app.use(reaccionesRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

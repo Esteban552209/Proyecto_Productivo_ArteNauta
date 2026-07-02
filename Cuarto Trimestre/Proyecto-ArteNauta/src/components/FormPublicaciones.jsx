@@ -1,16 +1,12 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-
-const API_USER = "741146561";
-const API_SECRET = "RD3oJvHzcHqNVqoYkBxT5vmwBDTbC2DD";
-const MODELS = "nudity-2.1,weapon,alcohol,recreational_drug,gore-2.0,violence,self-harm";
+import Swal from "sweetalert2";
 
 export default function FormPublicaciones({
     onNuevaPublicacion,
     onClose,
     idArtistaActivo
 }) {
-
     const [form, setForm] = useState({
         Titulo: "",
         Descripcion: "",
@@ -21,8 +17,7 @@ export default function FormPublicaciones({
     const [categorias, setCategorias] = useState([]);
     const [loadingCategorias, setLoadingCategorias] = useState(true);
     const [loading, setLoading] = useState(false);
-    const [exito, setExito] = useState(false);
-    const [error, setError] = useState(null);
+    const [isClosing, setIsClosing] = useState(false);
 
     useEffect(() => {
         const obtenerCategorias = async () => {
@@ -50,7 +45,12 @@ export default function FormPublicaciones({
 
         obtenerCategorias();
     }, []);
-
+    const manejarCierre = () => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+        }, 250);
+    };
 
     const handleChange = (e) => {
         setForm({
@@ -58,78 +58,33 @@ export default function FormPublicaciones({
             [e.target.name]: e.target.value,
         });
     };
-    const validarImagen = async (urlImagen) => {
-        try {
-            const response = await axios.get(
-                "https://api.sightengine.com/1.0/check.json",
-                {
-                    params: {
-                        url: urlImagen,
-                        models: MODELS,
-                        api_user: API_USER,
-                        api_secret: API_SECRET,
-                    },
-                },
-            );
-
-            const data = response.data;
-            console.log("Resultado Sightengine:", data);
-
-            if (data.status === "failure") {
-                return {
-                    segura: false,
-                    motivo: `Error de Sightengine: ${data.error.message}`,
-                };
-            }
-
-            const nudity = data.nudity?.raw ?? 0;
-            const violence = data.violence?.prob ?? 0;
-            const gore = data.gore?.prob ?? 0;
-            const drugs = data.recreational_drug?.prob ?? 0;
-
-            if (nudity > 0.5 || violence > 0.5 || gore > 0.5 || drugs > 0.5) {
-                return {
-                    segura: false,
-                    motivo: "La imagen contiene contenido inapropiado y no cumple con las normas de ArteNauta.",
-                };
-            }
-
-            return { segura: true };
-        } catch (err) {
-            console.error("Error completo de Sightengine:", err);
-            return {
-                segura: false,
-                motivo: "No fue posible analizar la imagen. Asegúrate de que sea una URL pública válida.",
-            };
-        }
-    };
 
     const handleSubmit = async () => {
         const token = localStorage.getItem("token");
 
         if (!form.Titulo.trim() || !form.Descripcion.trim()) {
-            setError('El título y la descripción son obligatorios');
+            Swal.fire({
+                icon: "warning",
+                title: "Campos incompletos",
+                text: "El título y la descripción son obligatorios.",
+                confirmButtonColor: "#0891b2"
+            });
             return;
         }
 
         if (!form.id_categoria) {
-            setError('Por favor, selecciona una categoría para tu obra');
+            Swal.fire({
+                icon: "warning",
+                title: "Falta categoría",
+                text: "Por favor, selecciona una categoría para tu obra.",
+                confirmButtonColor: "#0891b2"
+            });
             return;
         }
 
         setLoading(true);
-        setError(null);
 
         try {
-            if (form.contenido && form.contenido.trim()) {
-                const validacion = await validarImagen(form.contenido.trim());
-
-                if (!validacion.segura) {
-                    setError(validacion.motivo);
-                    setLoading(false);
-                    return; 
-                }
-            }
             const usuarioSesion = JSON.parse(localStorage.getItem('usuario'));
             const artistaId = idArtistaActivo || usuarioSesion?.id_usuario || usuarioSesion?.id;
 
@@ -140,8 +95,6 @@ export default function FormPublicaciones({
                 id_usuario_artista: artistaId,
                 id_categoria: Number(form.id_categoria)
             };
-
-            console.log("Enviando al backend:", payload);
 
             const res = await fetch("http://localhost:3000/publicaciones", {
                 method: "POST",
@@ -154,53 +107,61 @@ export default function FormPublicaciones({
 
             if (!res.ok) {
                 const errData = await res.json();
-                throw new Error(errData.error || "No se pudo crear la publicación en el servidor.");
+                throw new Error(errData.error || "No se pudo crear la publicación.");
             }
 
             const nuevaPub = await res.json();
-            console.log("Publicación creada con éxito:", nuevaPub);
+            Swal.fire({
+                icon: "success",
+                title: "¡Obra Publicada!",
+                text: "Tu publicación se ha creado exitosamente en ArteNauta.",
+                timer: 2000,
+                showConfirmButton: false
+            });
 
             onNuevaPublicacion(nuevaPub);
-            setExito(true);
-
             setTimeout(() => {
-                setExito(false);
-                onClose();
-            }, 1500);
+                manejarCierre();
+            }, 500);
 
-        } 
-        catch (err) 
-        {
+        } catch (err) {
             console.error(err);
-            setError(err.message);
-        } 
-        finally 
-        {
+            Swal.fire({
+                icon: "error",
+                title: "Contenido Rechazado",
+                text: err.message,
+                confirmButtonColor: "#0891b2"
+            });
+        } finally {
             setLoading(false);
         }
     };
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
-            style={{ backgroundColor: "rgba(0, 0, 0, 0.32)" }}
-            onClick={onClose}
+            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm animar-fondo"
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+            onClick={manejarCierre}
         >
             <div
-                className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4"
+                className={`bg-white rounded-2xl shadow-xl w-full max-w-md p-8 relative ${
+                    isClosing ? "animar-pop-salida" : "animar-pop"
+                }`}
                 onClick={(e) => e.stopPropagation()}
             >
+                {/* BOTÓN CIERRE */}
+                <button 
+                    onClick={manejarCierre} 
+                    className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                    ✕
+                </button>
+
                 {/* HEADER */}
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex justify-between items-center mb-5">
                     <h2 className="text-xl font-semibold text-gray-700">
                         Nueva publicación
                     </h2>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 text-xl font-bold"
-                    >
-                        ✕
-                    </button>
                 </div>
 
                 {/* FORM */}
@@ -225,7 +186,7 @@ export default function FormPublicaciones({
                         className="border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 resize-none"
                     />
 
-                    {/* NUEVO SELECT DE CATEGORÍAS FIJAS */}
+                    {/* SELECT CATEGORÍAS */}
                     <select
                         name="id_categoria"
                         value={form.id_categoria}
@@ -267,25 +228,11 @@ export default function FormPublicaciones({
                         </div>
                     )}
 
-                    {/* ERROR */}
-                    {error && (
-                        <p className="text-red-500 text-sm font-medium">
-                            {error}
-                        </p>
-                    )}
-
-                    {/* EXITO */}
-                    {exito && (
-                        <p className="text-green-500 text-sm font-medium">
-                            ¡Publicado con éxito! ✓
-                        </p>
-                    )}
-
-                    {/* BOTON */}
+                    {/* BOTON ENVIAR */}
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="bg-cyan-600 text-white rounded-xl py-2 text-sm font-medium hover:bg-cyan-700 transition disabled:opacity-50"
+                        className="bg-cyan-600 text-white rounded-xl py-2 mt-2 text-sm font-medium hover:bg-cyan-700 transition disabled:opacity-50"
                     >
                         {loading ? "Validando y publicando..." : "Publicar"}
                     </button>

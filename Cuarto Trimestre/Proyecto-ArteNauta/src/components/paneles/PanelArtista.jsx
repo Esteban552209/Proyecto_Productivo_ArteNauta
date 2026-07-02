@@ -90,7 +90,7 @@ function PanelArtista({ setVista }) {
                                 <p className="text-gray-500 text-sm">Tu espacio creativo en ArteNauta</p>
                             </div>
 
-                            {/* ✅ Misma barra de búsqueda que PanelUsuario */}
+                            {/*barra de búsqueda */}
                             <div className="flex items-center gap-2 w-full md:w-96">
                                 <input
                                     type="text"
@@ -122,7 +122,7 @@ function PanelArtista({ setVista }) {
                             </div>
                         </div>
 
-                        {/* ✅ Muro de publicaciones — igual que PanelUsuario */}
+                        {/* Muro de publicaciones */}
                         <div className="bg-white rounded-2xl shadow p-6">
                             <h2 className="text-lg font-bold text-cyan-700 mb-4">Obras destacadas</h2>
 
@@ -139,7 +139,6 @@ function PanelArtista({ setVista }) {
                             {!loading && publicaciones.length > 0 && (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                     {publicaciones.map((item) => (
-                                        // ✅ Mismo componente que PanelUsuario, con likes y comentarios
                                         <PublicacionesCom key={item.id_publicacion || item.id} item={item} />
                                     ))}
                                 </div>
@@ -162,7 +161,6 @@ function PanelArtista({ setVista }) {
                 />
             )}
 
-            {/* ✅ Modal de filtros — igual que PanelUsuario */}
             {showModalFiltros && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"

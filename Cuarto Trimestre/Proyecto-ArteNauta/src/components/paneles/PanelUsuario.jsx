@@ -72,7 +72,6 @@ function PanelUsuario({ setVista }) {
             setLoading(false);
         }
     };
-
     useEffect(() => {
         if (seccion === "inicio") {
             obtenerPublicacionesMuro();

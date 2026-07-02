@@ -7,6 +7,7 @@ function Publicaciones() {
     const [publicaciones, setPublicaciones] = useState([]);
     const [busqueda, setBusqueda] = useState('');
     const [filtro, setFiltro] = useState('recientes');
+
     const obtenerPublicaciones = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -14,7 +15,7 @@ function Publicaciones() {
             let url = `${API_PUBLICACIONES}?`;
 
             if (busqueda) {
-                url += `buscar=${busqueda}&`;
+                url += `buscar=${encodeURIComponent(busqueda)}&`;
             }
             if (filtro === 'likes') {
                 url += `ordenLikes=desc&`;
@@ -33,8 +34,11 @@ function Publicaciones() {
             });
 
             if (!res.ok) throw new Error('Error al obtener las publicaciones');
+            
             const data = await res.json();
+
             setPublicaciones(data);
+            
         } catch (err) {
             console.error(err);
             Swal.fire('Error', 'No se pudieron cargar las publicaciones', 'error');
@@ -75,7 +79,7 @@ function Publicaciones() {
 
             if (!res.ok) throw new Error('No se pudo eliminar');
 
-            setPublicaciones(publicaciones.filter((pub) => pub.id_publicacion !== id)); // Asumo que tu ID es id_publicacion
+            setPublicaciones(publicaciones.filter((pub) => pub.id_publicacion !== id));
 
             Swal.fire({
                 title: 'Eliminado',
@@ -94,7 +98,7 @@ function Publicaciones() {
                 Gestión de Publicaciones
             </h2>
             <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4 bg-white p-4 rounded-xl shadow-sm">
-
+                
                 <input
                     type="text"
                     placeholder="Buscar por título o descripción..."
@@ -120,7 +124,7 @@ function Publicaciones() {
                         onClick={() => setFiltro('likes')}
                         className={`px-4 py-2 rounded-lg font-medium transition ${filtro === 'likes' ? 'bg-cyan-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                     >
-                        Más Likes ♥
+                        Más Likes
                     </button>
                 </div>
             </div>
@@ -177,8 +181,20 @@ function Publicaciones() {
                                 </p>
                             </div>
                             <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
-                                <span className="text-xs font-semibold text-pink-500 bg-pink-50 px-2 py-1 rounded-md">
-                                    ♥ {pub.likes ?? 0} likes
+                                <span className="text-xs font-semibold text-pink-500 bg-pink-50 px-2 py-1 rounded-md flex items-center gap-1 shadow-sm border border-pink-100">
+                                    <svg 
+                                        xmlns="http://www.w3.org/2000/svg" 
+                                        className="w-3.5 h-3.5" 
+                                        viewBox="0 0 20 20" 
+                                        fill="currentColor"
+                                    >
+                                        <path 
+                                            fillRule="evenodd" 
+                                            d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" 
+                                            clipRule="evenodd" 
+                                        />
+                                    </svg>
+                                    {pub.totalLikes ?? 0}
                                 </span>
                                 <span className="text-xs text-gray-400">
                                     {new Date(pub.fecha_publicacion).toLocaleDateString()}
