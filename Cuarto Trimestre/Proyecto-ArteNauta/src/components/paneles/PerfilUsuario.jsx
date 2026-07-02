@@ -1,58 +1,167 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { supabase } from "../../lib/supabase";
 import MisObras from "./MisObras";
 
-function PerfilUsuario({ usuario, setSeccion }) {
-    const [datosActuales, setDatosActuales] = useState(usuario);
-    const [editando, setEditando] = useState(false);
-    const [solicitando, setSolicitando] = useState(false);
-    const [formData, setFormData] = useState({
-        nombre: usuario?.nombre || "",
-        apellido: usuario?.apellido || "",
-        telefono: usuario?.telefono || 0,
-        email: usuario?.email || "",
-    });
+const API_LOCAL_BACKEND = "http://localhost:3000";
 
-    const inicial = (datosActuales?.nombre || "U")[0].toUpperCase();
+function PerfilUsuario({ usuario, setSeccion }) {
+    const token = localStorage.getItem("token");
+
+    const [perfil, setPerfil] = useState(null); 
+    const [cargandoPerfil, setCargandoPerfil] = useState(true);
+
+    const [editandoDatos, setEditandoDatos] = useState(false);
+    const [guardandoDatos, setGuardandoDatos] = useState(false);
+    const [formDatos, setFormDatos] = useState({ nombre: "", apellido: "", telefono: "" });
+
+    const [editandoExtra, setEditandoExtra] = useState(false);
+    const [guardandoExtra, setGuardandoExtra] = useState(false);
+    const [formExtra, setFormExtra] = useState({ descripcion: "", ocupacion: "" });
+
+    const [solicitando, setSolicitando] = useState(false);
+
     const rolMap = { 1: "Usuario Final", 2: "Artista", 3: "Admin" };
-    const rolLabel = rolMap[datosActuales?.id_rol] || "usuario";
-    const rolKey = { 1: "usuario", 2: "artista", 3: "admin" }[datosActuales?.id_rol] || "usuario";
+    const rolLabel = rolMap[usuario?.id_rol] || "usuario";
+    const rolKey = { 1: "usuario", 2: "artista", 3: "admin" }[usuario?.id_rol] || "usuario";
     const rolColor = {
         admin: "bg-red-100 text-red-700 border border-red-300",
         artista: "bg-cyan-100 text-cyan-700 border border-cyan-300",
         usuario: "bg-green-100 text-green-700 border border-green-300",
     };
-    const token = localStorage.getItem("token");
 
-    const handleGuardar = async () => {
-        const usuarioActualizado = { ...datosActuales, ...formData };
+    const inicial = (perfil?.nombre || usuario?.nombre || "U")[0].toUpperCase();
+
+    const obtenerPerfil = async () => {
         try {
-            const { error } = await supabase
-                .from("usuarios")
-                .update({
-                    nombre: formData.nombre,
-                    apellido: formData.apellido,
-                    telefono: formData.telefono,
-                    email: formData.email,
-                })
-                .eq("id_usuario", usuario.id_usuario);
-            if (error) throw error;
+            setCargandoPerfil(true);
+            const res = await fetch(`${API_LOCAL_BACKEND}/perfil`, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) throw new Error("Error al obtener el perfil");
+
+            const data = await res.json();
+            setPerfil(data);
+            setFormDatos({
+                nombre: data.nombre || "",
+                apellido: data.apellido || "",
+                telefono: data.telefono || "",
+            });
+            setFormExtra({
+                descripcion: data.descripcion || "",
+                ocupacion: data.ocupacion || "",
+            });
         } catch (err) {
             console.error(err);
+            Swal.fire({
+                icon: "error",
+                title: "Ups...",
+                text: "No se pudo cargar tu perfil",
+                confirmButtonColor: "#0891b2",
+                confirmButtonText: "Entendido",
+            });
+        } finally {
+            setCargandoPerfil(false);
         }
+    };
 
-        localStorage.setItem("usuario", JSON.stringify(usuarioActualizado));
-        setDatosActuales(usuarioActualizado);
-        setEditando(false);
+    useEffect(() => {
+        obtenerPerfil();
+    }, []);
 
-        Swal.fire({
-            icon: "success",
-            title: "¡Perfil actualizado!",
-            confirmButtonColor: "#0891b2",
-            timer: 1800,
-            showConfirmButton: false,
-        });
+    const handleGuardarDatos = async () => {
+        setGuardandoDatos(true);
+        try {
+            const res = await fetch(`${API_LOCAL_BACKEND}/perfil/usuario`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    nombre: formDatos.nombre,
+                    apellido: formDatos.apellido,
+                    telefono: formDatos.telefono,
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Error al actualizar tus datos");
+
+            setPerfil((prev) => ({ ...prev, ...formDatos }));
+            setEditandoDatos(false);
+
+            Swal.fire({
+                icon: "success",
+                title: "¡Perfil actualizado!",
+                confirmButtonColor: "#0891b2",
+                timer: 1800,
+                showConfirmButton: false,
+            });
+        } catch (err) {
+            console.error(err);
+            Swal.fire({
+                icon: "error",
+                title: "Ups...",
+                text: err.message || "No se pudieron guardar tus datos",
+                confirmButtonColor: "#0891b2",
+                confirmButtonText: "Intentar de nuevo",
+            });
+        } finally {
+            setGuardandoDatos(false);
+        }
+    };
+
+    const handleGuardarExtra = async () => {
+        setGuardandoExtra(true);
+        try {
+            const res = await fetch(`${API_LOCAL_BACKEND}/perfil`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    descripcion: formExtra.descripcion,
+                    ocupacion: formExtra.ocupacion,
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Error al guardar la información");
+
+            setPerfil((prev) => ({
+                ...prev,
+                descripcion: data.descripcion,
+                ocupacion: data.ocupacion,
+                foto_perfil: data.foto_perfil,
+            }));
+            setEditandoExtra(false);
+
+            Swal.fire({
+                icon: "success",
+                title: "¡Información guardada!",
+                confirmButtonColor: "#0891b2",
+                timer: 1800,
+                showConfirmButton: false,
+            });
+        } catch (err) {
+            console.error(err);
+            Swal.fire({
+                icon: "error",
+                title: "Ups...",
+                text: err.message || "No se pudo guardar la información",
+                confirmButtonColor: "#0891b2",
+                confirmButtonText: "Intentar de nuevo",
+            });
+        } finally {
+            setGuardandoExtra(false);
+        }
     };
 
     const handleSolicitarArtista = async () => {
@@ -120,65 +229,81 @@ function PerfilUsuario({ usuario, setSeccion }) {
         }
     };
 
+    if (cargandoPerfil) {
+        return (
+            <div className="max-w-4xl mx-auto py-20 text-center text-gray-400">
+                Cargando perfil...
+            </div>
+        );
+    }
+
+    const tieneInfoExtra = perfil?.descripcion || perfil?.ocupacion || perfil?.foto_perfil;
+
     return (
         <div className="max-w-4xl mx-auto">
             <h1 className="text-2xl font-bold text-cyan-800 mb-6">Mi Perfil</h1>
 
-            {/* Tarjeta perfil */}
             <div className="bg-white rounded-2xl shadow p-6 mb-6 flex flex-col sm:flex-row gap-6 items-start">
                 <div className="flex flex-col items-center gap-2 min-w-[90px]">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-800 flex items-center justify-center text-white text-3xl font-bold shadow">
-                        {inicial}
-                    </div>
+                    {perfil?.foto_perfil ? (
+                        <img
+                            src={perfil.foto_perfil}
+                            alt="Foto de perfil"
+                            className="w-20 h-20 rounded-full object-cover shadow"
+                        />
+                    ) : (
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-800 flex items-center justify-center text-white text-3xl font-bold shadow">
+                            {inicial}
+                        </div>
+                    )}
                     <span className={`text-xs font-semibold px-3 py-1 rounded-full capitalize ${rolColor[rolKey]}`}>
                         {rolLabel}
                     </span>
                 </div>
 
                 <div className="flex-1 w-full">
-                    {editando ? (
+                    {editandoDatos ? (
                         <div className="flex flex-col gap-3">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
                                     <label className="text-xs font-medium text-gray-500 mb-1 block">Nombre</label>
                                     <input
                                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                                        value={formData.nombre}
-                                        onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                                        value={formDatos.nombre}
+                                        onChange={(e) => setFormDatos({ ...formDatos, nombre: e.target.value })}
                                     />
                                 </div>
                                 <div>
                                     <label className="text-xs font-medium text-gray-500 mb-1 block">Apellido</label>
                                     <input
                                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                                        value={formData.apellido}
-                                        onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
+                                        value={formDatos.apellido}
+                                        onChange={(e) => setFormDatos({ ...formDatos, apellido: e.target.value })}
                                     />
                                 </div>
                             </div>
                             <div>
-                                <label className="text-xs font-medium text-gray-500 mb-1 block">Email</label>
-                                <input
-                                    type="email"
-                                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                />
-                            </div>
-                            <div>
                                 <label className="text-xs font-medium text-gray-500 mb-1 block">Teléfono</label>
                                 <input
-                                    type="number"
+                                    type="tel"
                                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
-                                    value={formData.telefono}
-                                    onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                                    value={formDatos.telefono}
+                                    onChange={(e) => setFormDatos({ ...formDatos, telefono: e.target.value })}
                                 />
                             </div>
                             <div className="flex gap-2 mt-1">
-                                <button onClick={handleGuardar} className="bg-cyan-600 hover:bg-cyan-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition">
-                                    Guardar
+                                <button
+                                    onClick={handleGuardarDatos}
+                                    disabled={guardandoDatos}
+                                    className="bg-cyan-600 hover:bg-cyan-700 disabled:opacity-60 text-white px-5 py-2 rounded-lg text-sm font-semibold transition"
+                                >
+                                    {guardandoDatos ? "Guardando..." : "Guardar"}
                                 </button>
-                                <button onClick={() => setEditando(false)} className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-5 py-2 rounded-lg text-sm font-semibold transition">
+                                <button
+                                    onClick={() => setEditandoDatos(false)}
+                                    disabled={guardandoDatos}
+                                    className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-5 py-2 rounded-lg text-sm font-semibold transition"
+                                >
                                     Cancelar
                                 </button>
                             </div>
@@ -186,20 +311,23 @@ function PerfilUsuario({ usuario, setSeccion }) {
                     ) : (
                         <div>
                             <h2 className="text-xl font-bold text-gray-800 mb-1">
-                                {datosActuales?.nombre} {datosActuales?.apellido}
+                                {perfil?.nombre} {perfil?.apellido}
                             </h2>
                             <p className="text-gray-400 text-sm mb-3">
-                                @{(datosActuales?.nombre || "usuario").toLowerCase()}
+                                @{(perfil?.nombre || "usuario").toLowerCase()}
                             </p>
                             <div className="flex flex-col gap-1 text-sm text-gray-600 mb-4">
-                                {datosActuales?.email && (
-                                    <span><span className="font-medium">Email:</span> {datosActuales.email}</span>
+                                {perfil?.email && (
+                                    <span><span className="font-medium">Email:</span> {perfil.email}</span>
                                 )}
-                                {datosActuales?.telefono > 0 && (
-                                    <span><span className="font-medium">Teléfono:</span> {datosActuales.telefono}</span>
+                                {perfil?.telefono && (
+                                    <span><span className="font-medium">Teléfono:</span> {perfil.telefono}</span>
                                 )}
                             </div>
-                            <button onClick={() => setEditando(true)} className="border border-gray-300 hover:border-cyan-500 hover:text-cyan-600 text-gray-500 px-4 py-2 rounded-lg text-sm font-semibold transition">
+                            <button
+                                onClick={() => setEditandoDatos(true)}
+                                className="border border-gray-300 hover:border-cyan-500 hover:text-cyan-600 text-gray-500 px-4 py-2 rounded-lg text-sm font-semibold transition"
+                            >
                                 Editar Perfil
                             </button>
                         </div>
@@ -207,8 +335,79 @@ function PerfilUsuario({ usuario, setSeccion }) {
                 </div>
             </div>
 
-            {/* Solicitar ser Artista — solo Usuario_Final */}
-            {datosActuales?.id_rol === 1 && (
+            <div className="bg-white rounded-2xl shadow p-6 mb-6">
+                {editandoExtra ? (
+                    <div className="flex flex-col gap-3">
+                        <h3 className="font-bold text-gray-800 text-sm mb-1">Información adicional</h3>
+                        <div>
+                            <label className="text-xs font-medium text-gray-500 mb-1 block">Ocupación</label>
+                            <input
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                                placeholder="Ej. Ilustradora freelance"
+                                value={formExtra.ocupacion}
+                                onChange={(e) => setFormExtra({ ...formExtra, ocupacion: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium text-gray-500 mb-1 block">Descripción</label>
+                            <textarea
+                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400 resize-none h-24"
+                                placeholder="Cuéntanos un poco sobre ti..."
+                                value={formExtra.descripcion}
+                                onChange={(e) => setFormExtra({ ...formExtra, descripcion: e.target.value })}
+                            />
+                        </div>
+                        <div className="flex gap-2 mt-1">
+                            <button
+                                onClick={handleGuardarExtra}
+                                disabled={guardandoExtra}
+                                className="bg-cyan-600 hover:bg-cyan-700 disabled:opacity-60 text-white px-5 py-2 rounded-lg text-sm font-semibold transition"
+                            >
+                                {guardandoExtra ? "Guardando..." : "Guardar"}
+                            </button>
+                            <button
+                                onClick={() => setEditandoExtra(false)}
+                                disabled={guardandoExtra}
+                                className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-5 py-2 rounded-lg text-sm font-semibold transition"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                ) : tieneInfoExtra ? (
+                    <div>
+                        <h3 className="font-bold text-gray-800 text-sm mb-2">Información adicional</h3>
+                        {perfil?.ocupacion && (
+                            <p className="text-sm text-gray-600 mb-1">
+                                <span className="font-medium">Ocupación:</span> {perfil.ocupacion}
+                            </p>
+                        )}
+                        {perfil?.descripcion && (
+                            <p className="text-sm text-gray-600 mb-3">{perfil.descripcion}</p>
+                        )}
+                        <button
+                            onClick={() => setEditandoExtra(true)}
+                            className="border border-gray-300 hover:border-cyan-500 hover:text-cyan-600 text-gray-500 px-4 py-2 rounded-lg text-sm font-semibold transition"
+                        >
+                            Editar información
+                        </button>
+                    </div>
+                ) : (
+                    <div className="text-center py-4">
+                        <p className="text-sm text-gray-400 mb-3">
+                            Aún no has añadido información a tu perfil.
+                        </p>
+                        <button
+                            onClick={() => setEditandoExtra(true)}
+                            className="border-2 border-dashed border-cyan-300 hover:border-cyan-500 hover:bg-cyan-50 text-cyan-600 px-5 py-2 rounded-xl font-semibold transition text-sm"
+                        >
+                            + Añade info a tu perfil
+                        </button>
+                    </div>
+                )}
+            </div>
+
+            {usuario?.id_rol === 1 && (
                 <div className="bg-white rounded-2xl shadow p-6 mb-6">
                     <div className="flex items-center gap-3 mb-3">
                         <span className="text-2xl">🎨</span>
@@ -227,10 +426,9 @@ function PerfilUsuario({ usuario, setSeccion }) {
                 </div>
             )}
 
-            {/* ✅ MisObras es ahora un componente separado — solo visible para artistas */}
-            {datosActuales?.id_rol === 2 && (
+            {usuario?.id_rol === 2 && (
                 <MisObras
-                    idUsuario={datosActuales?.id_usuario || datosActuales?.id}
+                    idUsuario={usuario?.id_usuario}
                     token={token}
                 />
             )}

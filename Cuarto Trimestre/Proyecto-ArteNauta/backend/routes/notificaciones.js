@@ -8,7 +8,6 @@ const router = express.Router();
 //Metodos GET
 
 // GET — obtener notificaciones de un usuario (Si funciona)
-// Ejemplo: GET /notificaciones?id_usuario=5
 router.get("/notificaciones", verificarToken, async (req, res) => {
     try {
         const { id_usuario } = req.query;

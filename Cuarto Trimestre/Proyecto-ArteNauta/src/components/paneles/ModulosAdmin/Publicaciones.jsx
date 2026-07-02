@@ -168,7 +168,7 @@ function Publicaciones() {
 
                                 {pub.usuarios && (
                                     <p className="text-xs text-cyan-700 font-medium mt-1">
-                                        👤 Por: {pub.usuarios.nombre}
+                                        Por: {pub.usuarios.nombre}
                                     </p>
                                 )}
 

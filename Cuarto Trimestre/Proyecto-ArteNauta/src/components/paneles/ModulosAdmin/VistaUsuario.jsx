@@ -1,22 +1,16 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-
-import PerfilUsuario from "./PerfilUsuario";
-import PublicacionesCom from "../PublicacionesCom";
-import HeaderPanel from "./HeaderPanel";
-import Conversaciones from "./ModulosConversaciones/VistaChats";
-import Notificaciones from "./ModulosConversaciones/../Notificaciones";
+import PublicacionesCom from "../../PublicacionesCom";
 
 const API_LOCAL_BACKEND = "http://localhost:3000";
 
-function PanelUsuario({ setVista }) {
+function VistaUsuario() {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
     const [publicaciones, setPublicaciones] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [seccion, setSeccion] = useState("inicio");
     const [busqueda, setBusqueda] = useState("");
-    const [filtroFecha, setFiltroFecha] = useState("desc"); 
-    const [filtroLikes, setFiltroLikes] = useState(""); 
+    const [filtroFecha, setFiltroFecha] = useState("desc");
+    const [filtroLikes, setFiltroLikes] = useState("");
     const [showModalFiltros, setShowModalFiltros] = useState(false);
 
     const obtenerPublicacionesMuro = async () => {
@@ -40,19 +34,17 @@ function PanelUsuario({ setVista }) {
 
             if (res.status === 401) {
                 console.log("Sesión expirada o token inválido");
-
                 localStorage.removeItem("token");
                 localStorage.removeItem("usuario");
 
                 Swal.fire({
                     icon: "warning",
                     title: "Sesión Expirada",
-                    text: "Tu sesión ha terminado por seguridad. Vuelve a ingresar a ArteNauta.",
+                    text: "Tu sesión de administrador ha terminado por seguridad. Vuelve a ingresar.",
                     confirmButtonColor: "#0891b2",
                 }).then(() => {
                     window.location.reload();
                 });
-
                 return;
             }
 
@@ -74,109 +66,96 @@ function PanelUsuario({ setVista }) {
     };
 
     useEffect(() => {
-        if (seccion === "inicio") {
-            obtenerPublicacionesMuro();
-        }
-    }, [seccion, busqueda, filtroFecha, filtroLikes]);
+        obtenerPublicacionesMuro();
+    }, [busqueda, filtroFecha, filtroLikes]);
 
     return (
-        <div className="min-h-screen bg-cyan-50 flex flex-col">
-            <HeaderPanel
-                seccion={seccion}
-                setSeccion={setSeccion}
-                setVista={setVista}
-            />
-
-            <main className="flex-1 p-4 max-w-7xl mx-auto w-full">
-                {seccion === "inicio" && (
+        <div className="w-full flex flex-col">
+            <div className="flex-1 w-full">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                     <div>
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                            <div>
-                                <h1 className="text-2xl font-bold text-cyan-800 mb-1">
-                                    Bienvenido, {usuario?.nombre}
-                                </h1>
-                                <p className="text-gray-500 text-sm">
-                                    Explora y descubre arte en ArteNauta
-                                </p>
-                            </div>
-
-                            <div className="flex items-center gap-2 w-full md:w-96">
-                                <input
-                                    type="text"
-                                    placeholder="Buscar por título o descripción..."
-                                    value={busqueda}
-                                    onChange={(e) =>
-                                        setBusqueda(e.target.value)
-                                    }
-                                    className="w-full px-4 py-2 text-sm border border-cyan-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 bg-white shadow-sm text-gray-700"
-                                />
-                                <button
-                                    onClick={() => setShowModalFiltros(true)}
-                                    className="px-3 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition shadow-sm flex items-center gap-1 font-medium text-sm whitespace-nowrap"
-                                >
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                    >
-                                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-                                        <circle cx="12" cy="12" r="3"></circle>
-                                    </svg>
-                                    Filtros
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="bg-white rounded-2xl shadow p-6">
-                            <h2 className="text-lg font-bold text-cyan-700 mb-4">
-                                Obras destacadas
-                            </h2>
-
-                            {loading && (
-                                <p className="text-center text-gray-400 py-10">
-                                    Cargando publicaciones...
-                                </p>
-                            )}
-
-                            {!loading && publicaciones.length === 0 && (
-                                <p className="text-center text-gray-400 py-10">
-                                    No se encontraron obras que coincidan con
-                                    los filtros aplicados.
-                                </p>
-                            )}
-
-                            {!loading && publicaciones.length > 0 && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    {publicaciones.map((item) => (
-                                        <PublicacionesCom
-                                            key={item.id_publicacion || item.id}
-                                            item={item}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                        <h1 className="text-2xl font-bold text-cyan-800 mb-1 flex items-center gap-2">
+                            <svg
+                                className="w-6 h-6"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                                strokeWidth={2}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                            Modo Vista de Usuario
+                        </h1>
+                        <p className="text-gray-500 text-sm">
+                            Visualizando e interactuando con el muro tal como lo
+                            ven los usuarios. (Admin: {usuario?.nombre})
+                        </p>
                     </div>
-                )}
 
-                {seccion === "notificaciones" && (
-                    <Notificaciones usuario={usuario} />
-                )}
+                    <div className="flex items-center gap-2 w-full md:w-96">
+                        <input
+                            type="text"
+                            placeholder="Buscar por título o descripción..."
+                            value={busqueda}
+                            onChange={(e) => setBusqueda(e.target.value)}
+                            className="w-full px-4 py-2 text-sm border border-cyan-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-400 bg-white shadow-sm text-gray-700"
+                        />
+                        <button
+                            onClick={() => setShowModalFiltros(true)}
+                            className="px-3 py-2 bg-cyan-600 text-white rounded-xl hover:bg-cyan-700 transition shadow-sm flex items-center gap-1 font-medium text-sm whitespace-nowrap"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            Filtros
+                        </button>
+                    </div>
+                </div>
 
-                {seccion === "conversaciones" && (
-                    <Conversaciones usuario={usuario} />
-                )}
+                <div className="bg-white rounded-2xl shadow p-6 border border-gray-100">
+                    <h2 className="text-lg font-bold text-cyan-700 mb-4">
+                        Muro de Obras
+                    </h2>
 
-                {seccion === "perfil" && (
-                    <PerfilUsuario usuario={usuario} setSeccion={setSeccion} />
-                )}
-            </main>
+                    {loading && (
+                        <p className="text-center text-gray-400 py-10">
+                            Cargando publicaciones...
+                        </p>
+                    )}
+
+                    {!loading && publicaciones.length === 0 && (
+                        <p className="text-center text-gray-400 py-10">
+                            No se encontraron obras que coincidan con los
+                            filtros aplicados.
+                        </p>
+                    )}
+
+                    {!loading && publicaciones.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                            {publicaciones.map((item) => (
+                                <PublicacionesCom
+                                    key={item.id_publicacion || item.id}
+                                    item={item}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
 
             {showModalFiltros && (
                 <div
@@ -208,7 +187,7 @@ function PanelUsuario({ setVista }) {
                                     value={filtroFecha}
                                     onChange={(e) => {
                                         setFiltroFecha(e.target.value);
-                                        setFiltroLikes(""); 
+                                        setFiltroLikes("");
                                     }}
                                     className="w-full p-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-cyan-400 focus:outline-none bg-white text-gray-700"
                                 >
@@ -259,4 +238,4 @@ function PanelUsuario({ setVista }) {
     );
 }
 
-export default PanelUsuario;
+export default VistaUsuario;

@@ -7,6 +7,8 @@ import Estadisticas from "./ModulosAdmin/Estadisticas";
 import Publicaciones from "./ModulosAdmin/Publicaciones";
 import Comentarios from "./ModulosAdmin/Comentarios";
 import Notificaciones from "./Notificaciones";
+import VistaUsuario from "./ModulosAdmin/VistaUsuario";
+import Categorias from "./ModulosAdmin/Categorias";
 
 function PanelAdmin({ setVista }) {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
@@ -36,7 +38,9 @@ function PanelAdmin({ setVista }) {
                     </div>
                 )}
 
+                {seccion === "VistaUsuario" && <VistaUsuario />}
                 {seccion === "publicaciones" && <Publicaciones />}
+                {seccion === "categorias" && <Categorias />}
                 {seccion === "usuarios" && <Usuarios />}
                 {seccion === "comentarios" && <Comentarios />}
                 {seccion === "notificaciones" && (
