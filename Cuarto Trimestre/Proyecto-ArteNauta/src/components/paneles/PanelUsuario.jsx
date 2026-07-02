@@ -14,13 +14,9 @@ function PanelUsuario({ setVista }) {
     const [publicaciones, setPublicaciones] = useState([]);
     const [loading, setLoading] = useState(true);
     const [seccion, setSeccion] = useState("inicio");
-
-    // ==========================================
-    // ESTADOS PARA BÚSQUEDA Y FILTROS AVANZADOS
-    // ==========================================
     const [busqueda, setBusqueda] = useState("");
-    const [filtroFecha, setFiltroFecha] = useState("desc"); // 'desc' = más recientes, 'asc' = más antiguas
-    const [filtroLikes, setFiltroLikes] = useState(""); // 'desc' = más populares, 'asc' = menos populares, "" = sin orden por likes
+    const [filtroFecha, setFiltroFecha] = useState("desc");
+    const [filtroLikes, setFiltroLikes] = useState("");
     const [showModalFiltros, setShowModalFiltros] = useState(false);
 
     const obtenerPublicacionesMuro = async () => {
@@ -29,7 +25,6 @@ function PanelUsuario({ setVista }) {
         try {
             setLoading(true);
 
-            // Construimos la URL dinámica enviando los parámetros necesarios a tu endpoint
             let url = `${API_LOCAL_BACKEND}/Muro-Publicaciones?buscar=${encodeURIComponent(busqueda)}&ordenFecha=${filtroFecha}`;
             if (filtroLikes) {
                 url += `&ordenLikes=${filtroLikes}`;
@@ -77,8 +72,6 @@ function PanelUsuario({ setVista }) {
             setLoading(false);
         }
     };
-
-    // Agregamos busqueda, filtroFecha y filtroLikes al ciclo de vida del useEffect
     useEffect(() => {
         if (seccion === "inicio") {
             obtenerPublicacionesMuro();

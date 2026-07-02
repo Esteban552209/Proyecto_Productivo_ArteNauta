@@ -1,52 +1,40 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
+import BotonLike from "./BotonLike"; 
 
 export default function PublicacionesCom({ item }) {
-    const [liked, setLiked] = useState(false);
-    const [likes, setLikes] = useState(item.likes ?? item.Likes ?? 0);
     const [showDetalleModal, setShowDetalleModal] = useState(false);
     const [comentarios, setComentarios] = useState([]);
     const [loadingCom, setLoadingCom] = useState(false);
     const [errorCom, setErrorCom] = useState(null);
     const [nuevoComentario, setNuevoComentario] = useState("");
     const [submittingCom, setSubmittingCom] = useState(false);
+
     const usuarioGuardado = localStorage.getItem("usuario");
     const usuarioLogueado = usuarioGuardado ? JSON.parse(usuarioGuardado) : null;
+    
     const tituloStr = item.titulo || item.Titulo || "Sin título";
     const descripcionStr = item.descripcion || item.Descripcion || "Sin descripción.";
     const contenidoUrl = item.contenido || item.Contenido || "";
     const autorNombre = item.usuarios?.nombre || "Artista";
     const autorAvatar = item.usuarios?.avatar_url || null;
 
-    // =========================
-    // LIKES
-    // =========================
-    const toggleLike = () => {
-        setLiked(!liked);
-        setLikes((prev) => (liked ? prev - 1 : prev + 1));
-    };
-
     const postId = item.id_publicacion || item.id;
     const userId = usuarioLogueado?.id_usuario || usuarioLogueado?.id;
-
-    // =========================
-    // ABRIR DETALLE Y COMENTARIOS
-    // =========================
     const abrirDetalleModal = async () => {
-        const token = localStorage.getItem("token")
+        const token = localStorage.getItem("token");
         setShowDetalleModal(true);
         setLoadingCom(true);
         setErrorCom(null);
 
         try {
             const res = await fetch(`http://localhost:3000/comentarios/${postId}`, {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
                 },
-);
+            });
             if (!res.ok) throw new Error("Error al obtener los comentarios desde el servidor.");
             const data = await res.json();
             setComentarios(data || []);
@@ -57,11 +45,8 @@ export default function PublicacionesCom({ item }) {
         }
     };
 
-    // =========================
-    // ENVIAR NUEVO COMENTARIO
-    // =========================
     const enviarComentario = async (e) => {
-        const token = localStorage.getItem("token")
+        const token = localStorage.getItem("token");
         e.preventDefault();
         if (!nuevoComentario.trim()) return;
 
@@ -151,10 +136,13 @@ export default function PublicacionesCom({ item }) {
                             />
                             {/* Overlay de Hover estilo Instagram */}
                             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-medium text-sm select-none">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 21C12 21 3 15.5 3 9.5C3 7 5 5 7.5 5C9.5 5 11 6.5 12 8C13 6.5 14.5 5 16.5 5C19 5 21 7 21 9.5C21 15.5 12 21 12 21Z" />
-                                </svg>
-                                <span>{likes}</span>
+                                {/* Ponemos el botón aquí sin texto para simular el contador interactivo de IG */}
+                                <BotonLike 
+                                    idPublicacion={postId} 
+                                    idUsuarioActual={userId} 
+                                    className="flex items-center gap-1 text-white bg-transparent border-none p-0 cursor-pointer pointer-events-auto"
+                                    iconSize="16"
+                                />
                             </div>
                         </div>
                     )}
@@ -170,24 +158,14 @@ export default function PublicacionesCom({ item }) {
                     </p>
                 </div>
 
-                {/* BOTONES */}
+                {/* BOTONES PRINCIPALES DE TARJETA */}
                 <div className="flex items-center gap-3 mt-4">
-                    {/* LIKE */}
-                    <button
-                        onClick={toggleLike}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition text-xs font-medium ${
-                            liked
-                                ? "border-red-200 bg-red-50 text-red-500"
-                                : "border-gray-100 text-gray-400 hover:border-red-200 hover:text-red-400"
-                        }`}
-                    >
-                        <svg width="12" height="12" viewBox="0 0 24 24"
-                            fill={liked ? "currentColor" : "none"}
-                            stroke="currentColor" strokeWidth="2">
-                            <path d="M12 21C12 21 3 15.5 3 9.5C3 7 5 5 7.5 5C9.5 5 11 6.5 12 8C13 6.5 14.5 5 16.5 5C19 5 21 7 21 9.5C21 15.5 12 21 12 21Z" />
-                        </svg>
-                        {likes}
-                    </button>
+                    {/* BOTONLIKE */}
+                    <BotonLike 
+                        idPublicacion={postId} 
+                        idUsuarioActual={userId} 
+                        iconSize="12"
+                    />
 
                     {/* COMENTARIOS */}
                     <button
@@ -203,7 +181,7 @@ export default function PublicacionesCom({ item }) {
                 </div>
             </div>
 
-            {/* MODAL DE DETALLE (ESTILO INSTAGRAM) */}
+            {/* MODAL */}
             {showDetalleModal && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -214,7 +192,7 @@ export default function PublicacionesCom({ item }) {
                         className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] max-h-[750px] flex flex-col md:flex-row overflow-hidden relative"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Botón Cerrar en Pantallas Pequeñas */}
+                        {/* Botón Cerrar Móvil */}
                         <button
                             onClick={() => setShowDetalleModal(false)}
                             className="absolute top-3 right-3 z-20 bg-black/40 hover:bg-black/60 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-base cursor-pointer md:hidden"
@@ -222,7 +200,6 @@ export default function PublicacionesCom({ item }) {
                             ✕
                         </button>
 
-                        {/* SECCIÓN IZQUIERDA: IMAGEN (60% en escritorio) */}
                         <div className="md:w-3/5 bg-neutral-950 flex items-center justify-center relative select-none h-[40%] md:h-full">
                             {contenidoUrl ? (
                                 <img
@@ -238,9 +215,9 @@ export default function PublicacionesCom({ item }) {
                             )}
                         </div>
 
-                        {/* SECCIÓN DERECHA: DETALLES Y COMENTARIOS (40% en escritorio) */}
+                        {/* SECCIÓN DERECHA MODAL */}
                         <div className="md:w-2/5 flex flex-col h-[60%] md:h-full bg-white relative">
-                            {/* CABECERA (Autor de la publicación) */}
+                            {/* CABECERA */}
                             <div className="p-4 border-b border-gray-100 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     {autorAvatar ? (
@@ -257,7 +234,6 @@ export default function PublicacionesCom({ item }) {
                                     <span className="font-semibold text-gray-800 text-sm">{autorNombre}</span>
                                 </div>
 
-                                {/* Botón Cerrar en Escritorio */}
                                 <button
                                     onClick={() => setShowDetalleModal(false)}
                                     className="hidden md:flex text-gray-400 hover:text-gray-600 text-xl font-bold cursor-pointer"
@@ -266,9 +242,8 @@ export default function PublicacionesCom({ item }) {
                                 </button>
                             </div>
 
-                            {/* CONTENIDO DESCRIPCIÓN + COMENTARIOS (Scrollable) */}
+                            {/* CONTENIDO */}
                             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                                {/* Título y Descripción de la obra (estilo pie de foto) */}
                                 <div className="flex items-start gap-3 pb-4 border-b border-gray-50">
                                     {autorAvatar ? (
                                         <img
@@ -332,29 +307,15 @@ export default function PublicacionesCom({ item }) {
                                 )}
                             </div>
 
-                            {/* PIE DE PÁGINA: LIKES & INTERACCIONES */}
+                            {/* PIE DE PÁGINA*/}
                             <div className="p-4 border-t border-gray-100 bg-gray-50 flex flex-col gap-3">
                                 <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        {/* Botón de Like */}
-                                        <button
-                                            onClick={toggleLike}
-                                            className={`p-1.5 rounded-full border transition-all duration-200 ${
-                                                liked
-                                                    ? "border-red-200 bg-red-50 text-red-500 scale-105"
-                                                    : "border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-400 hover:scale-105"
-                                            }`}
-                                        >
-                                            <svg width="14" height="14" viewBox="0 0 24 24"
-                                                fill={liked ? "currentColor" : "none"}
-                                                stroke="currentColor" strokeWidth="2">
-                                                <path d="M12 21C12 21 3 15.5 3 9.5C3 7 5 5 7.5 5C9.5 5 11 6.5 12 8C13 6.5 14.5 5 16.5 5C19 5 21 7 21 9.5C21 15.5 12 21 12 21Z" />
-                                            </svg>
-                                        </button>
-                                        <span className="text-xs font-semibold text-gray-700">
-                                            {likes} {likes === 1 ? "me gusta" : "me gustas"}
-                                        </span>
-                                    </div>
+                                    <BotonLike 
+                                        idPublicacion={postId} 
+                                        idUsuarioActual={userId}
+                                        iconSize="14"
+                                        className="flex items-center gap-2 text-xs font-semibold text-gray-700 bg-transparent border-none p-0 cursor-pointer select-none"
+                                    />
                                 </div>
 
                                 {/* Formulario para comentar */}

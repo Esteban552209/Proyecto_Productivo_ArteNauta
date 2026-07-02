@@ -227,7 +227,6 @@ function PerfilUsuario({ usuario, setSeccion }) {
                 </div>
             )}
 
-            {/* ✅ MisObras es ahora un componente separado — solo visible para artistas */}
             {datosActuales?.id_rol === 2 && (
                 <MisObras
                     idUsuario={datosActuales?.id_usuario || datosActuales?.id}
