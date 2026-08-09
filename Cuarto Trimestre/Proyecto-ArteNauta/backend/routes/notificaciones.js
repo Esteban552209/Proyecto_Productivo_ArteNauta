@@ -301,5 +301,103 @@ router.delete("/solicitudes/:id", verificarToken, async (req, res) => {
     }
 });
 
+// POST — notificar al artista cuando le dan like -- No se si funciona(x)
+router.post("/notificaciones/like", verificarToken, async (req, res) => {
+    try {
+        const { id_usuario_artista, id_usuario_like, id_publicacion } = req.body;
+
+        if (!id_usuario_artista || !id_usuario_like) {
+            return res.status(400).json({ error: "Faltan campos requeridos" });
+        }
+
+        // Obtener nombre del usuario que dio like
+        const { data: usuario, error: errUsuario } = await supabase
+            .from("usuarios")
+            .select("nombre, apellido")
+            .eq("id_usuario", id_usuario_like)
+            .single();
+
+        if (errUsuario) throw errUsuario;
+
+        const nombre = `${usuario.nombre} ${usuario.apellido || ""}`.trim();
+
+        const { error } = await supabase
+            .from("notificaciones")
+            .insert({
+                id_usuario: id_usuario_artista,
+                asunto: `${nombre} le dio me gusta a tu publicación`,
+                tipo_notificacion: "Reaccion",
+                fecha_notificacion: new Date().toISOString(),
+            });
+
+        if (error) throw error;
+
+        res.status(201).json({ mensaje: "Notificación de like enviada" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST — notificar al artista cuando le comentan -- No se si funciona(x)
+router.post("/notificaciones/comentario", verificarToken, async (req, res) => {
+    try {
+        const { id_usuario_artista, id_usuario_comentario, id_publicacion } = req.body;
+
+        if (!id_usuario_artista || !id_usuario_comentario) {
+            return res.status(400).json({ error: "Faltan campos requeridos" });
+        }
+
+        // Obtener nombre del usuario que comentó
+        const { data: usuario, error: errUsuario } = await supabase
+            .from("usuarios")
+            .select("nombre, apellido")
+            .eq("id_usuario", id_usuario_comentario)
+            .single();
+
+        if (errUsuario) throw errUsuario;
+
+        const nombre = `${usuario.nombre} ${usuario.apellido || ""}`.trim();
+
+        const { error } = await supabase
+            .from("notificaciones")
+            .insert({
+                id_usuario: id_usuario_artista,
+                asunto: `${nombre} comentó tu publicación`,
+                tipo_notificacion: "Comentario",
+                fecha_notificacion: new Date().toISOString(),
+            });
+
+        if (error) throw error;
+
+        res.status(201).json({ mensaje: "Notificación de comentario enviada" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+// PATCH — marcar todas las notificaciones de un usuario como leídas
+router.patch("/notificaciones/marcar-leidas", verificarToken, async (req, res) => {
+    try {
+        const id_usuario = req.usuario?.id_usuario || req.usuario?.id;
+
+        if (!id_usuario) {
+            return res.status(400).json({ error: "Usuario no identificado" });
+        }
+
+        const { error } = await supabase
+            .from("notificaciones")
+            .update({ leida: true })
+            .eq("id_usuario", id_usuario)
+            .eq("leida", false);
+
+        if (error) throw error;
+
+        res.status(200).json({ mensaje: "Notificaciones marcadas como leídas" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 export default router;  
