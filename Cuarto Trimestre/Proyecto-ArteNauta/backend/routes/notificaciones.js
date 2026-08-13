@@ -262,45 +262,6 @@ router.post('/notificaciones/solicitudes', verificarToken, async (req, res) => {
     }
 });
 
-//Metodos DELETE
-
-// DELETE — eliminar una notificación específica
-router.delete("/notificaciones/:id", verificarToken, async (req, res) => {
-    try {
-        const { id } = req.params; // ID de la notificación desde la URL
-
-        const { error } = await supabase
-            .from("notificaciones")
-            .delete()
-            .eq("id_notificacion", id); // Cambia "id_notificacion" por el nombre exacto de tu llave primaria
-
-        if (error) throw error;
-
-        res.status(200).json({ mensaje: "Notificación eliminada correctamente en Supabase." });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-
-// DELETE — eliminar una solicitud específica 
-router.delete("/solicitudes/:id", verificarToken, async (req, res) => {
-    try {
-        const { id } = req.params; // ID de la solicitud desde la URL
-
-        const { error } = await supabase
-            .from("solicitudes")
-            .delete()
-            .eq("id_solicitud", id); // Elimina la fila que coincida con el ID
-
-        if (error) throw error;
-
-        res.status(200).json({ mensaje: "Solicitud eliminada correctamente de Supabase." });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
 // POST — notificar al artista cuando le dan like -- No se si funciona(x)
 router.post("/notificaciones/like", verificarToken, async (req, res) => {
     try {
@@ -375,7 +336,6 @@ router.post("/notificaciones/comentario", verificarToken, async (req, res) => {
     }
 });
 
-
 // PATCH — marcar todas las notificaciones de un usuario como leídas
 router.patch("/notificaciones/marcar-leidas", verificarToken, async (req, res) => {
     try {
@@ -398,6 +358,47 @@ router.patch("/notificaciones/marcar-leidas", verificarToken, async (req, res) =
         res.status(500).json({ error: error.message });
     }
 });
+
+
+//Metodos DELETE
+
+// DELETE — eliminar una notificación específica
+router.delete("/notificaciones/:id", verificarToken, async (req, res) => {
+    try {
+        const { id } = req.params; // ID de la notificación desde la URL
+
+        const { error } = await supabase
+            .from("notificaciones")
+            .delete()
+            .eq("id_notificacion", id); // Cambia "id_notificacion" por el nombre exacto de tu llave primaria
+
+        if (error) throw error;
+
+        res.status(200).json({ mensaje: "Notificación eliminada correctamente en Supabase." });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+// DELETE — eliminar una solicitud específica 
+router.delete("/solicitudes/:id", verificarToken, async (req, res) => {
+    try {
+        const { id } = req.params; // ID de la solicitud desde la URL
+
+        const { error } = await supabase
+            .from("solicitudes")
+            .delete()
+            .eq("id_solicitud", id); // Elimina la fila que coincida con el ID
+
+        if (error) throw error;
+
+        res.status(200).json({ mensaje: "Solicitud eliminada correctamente de Supabase." });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 
 export default router;  
