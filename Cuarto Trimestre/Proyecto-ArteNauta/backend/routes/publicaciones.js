@@ -219,13 +219,8 @@ router.put('/publicaciones/:id_publicacion', async (req, res) => {
     }
 });
 
-<<<<<<< Updated upstream
-// DELETE: aliminar publicaciones
-router.delete('/publicaciones/:id_publicacion', async (req, res) => {
-=======
 // DELETE: eliminar publicaciones
 router.delete("/publicaciones/:id_publicacion", async (req, res) => {
->>>>>>> Stashed changes
     try {
         const { id_publicacion } = req.params;
 
