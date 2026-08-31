@@ -243,7 +243,7 @@ router.put("/publicaciones/:id_publicacion", async (req, res) => {
     }
 });
 
-// DELETE: aliminar publicaciones
+// DELETE: eliminar publicaciones
 router.delete("/publicaciones/:id_publicacion", async (req, res) => {
     try {
         const { id_publicacion } = req.params;

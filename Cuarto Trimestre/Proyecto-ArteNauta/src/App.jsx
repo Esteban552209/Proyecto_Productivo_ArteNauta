@@ -8,11 +8,13 @@ import Contacto from "./components/Contacto";
 import PanelAdmin from "./components/paneles/PanelAdmin";
 import PanelArtista from "./components/paneles/PanelArtista";
 import PanelUsuario from "./components/paneles/PanelUsuario";
+import RestablecerClave from "./components/RestablecerClave";
 import { supabase } from "./lib/supabase";
 import Preloader from "./components/Preloader";
 
 function App() {
-    const [showPreloader, setShowPreloader] = useState(true);
+    const isRestablecer = window.location.pathname === "/restablecer-clave";
+    const [showPreloader, setShowPreloader] = useState(!isRestablecer);
     const [pagina, setPagina] = useState("home");
     const [vista, setVista] = useState(() => {
         const usuarioGuardado = localStorage.getItem("usuario");
@@ -92,6 +94,8 @@ function App() {
 
         return () => supabase.removeChannel(canal);
     }, []);
+
+    if (isRestablecer) return <RestablecerClave />;
 
     if (showPreloader) return <Preloader onComplete={() => setShowPreloader(false)} />;
 
