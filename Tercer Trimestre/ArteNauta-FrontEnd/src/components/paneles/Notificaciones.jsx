@@ -6,7 +6,6 @@ import { supabase } from '../../lib/supabase';
 //Dirección del backend
 const API = 'http://localhost:3000';
 
-// Mapeo de vectores SVG profesionales para reemplazar los emojis de las alertas
 const iconosNotificacion = {
     solicitud_aprobada: (
         <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -33,6 +32,11 @@ const iconosNotificacion = {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
     ),
+    Mensaje: (
+        <svg className="w-5 h-5 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+    ),
 };
 
 function Notificaciones({ usuario, setVista }) {
@@ -43,9 +47,10 @@ function Notificaciones({ usuario, setVista }) {
     const [notificaciones, setNotificaciones] = useState([]);
     const [solicitudes, setSolicitudes] = useState([]);
     const [abierto, setAbierto] = useState(false);
+    const [vistas, setVistas] = useState(false); // ← nuevo
     const ref = useRef(null);
 
-    const totalBadge = notificaciones.length + solicitudes.length;
+    const totalBadge = vistas ? 0 : notificaciones.length + solicitudes.length; // ← modificado
 
     const headers = {
         'Content-Type': 'application/json',
@@ -76,6 +81,7 @@ function Notificaciones({ usuario, setVista }) {
                 filter: `id_usuario=eq.${idUsuario}`,
             }, payload => {
                 setNotificaciones(prev => [payload.new, ...prev]);
+                setVistas(false); // ← badge vuelve al recibir nueva notif
             })
             .subscribe();
 
@@ -85,7 +91,10 @@ function Notificaciones({ usuario, setVista }) {
                 .channel(nombreCanalSol)
                 .on('postgres_changes', {
                     event: '*', schema: 'public', table: 'solicitudes',
-                }, () => cargarSolicitudes())
+                }, () => {
+                    cargarSolicitudes();
+                    setVistas(false); // ← badge vuelve al llegar solicitud
+                })
                 .subscribe();
         }
 
@@ -155,14 +164,9 @@ function Notificaciones({ usuario, setVista }) {
         try {
             const res = await fetch(
                 `${API}/notificaciones/solicitudes/${sol.id_solicitud}/aprobar`,
-                {
-                    method: 'PATCH',
-                    headers,
-                    body: JSON.stringify({ id_usuario: sol.id_usuario }),
-                }
+                { method: 'PATCH', headers, body: JSON.stringify({ id_usuario: sol.id_usuario }) }
             );
             if (!res.ok) throw new Error('Error al aprobar');
-
             setSolicitudes(prev => prev.filter(s => s.id_solicitud !== sol.id_solicitud));
             Swal.fire({ icon: 'success', title: '¡Solicitud aprobada!', confirmButtonColor: '#0891b2', timer: 2000, showConfirmButton: false });
         } catch (e) {
@@ -175,14 +179,9 @@ function Notificaciones({ usuario, setVista }) {
         try {
             const res = await fetch(
                 `${API}/notificaciones/solicitudes/${sol.id_solicitud}/rechazar`,
-                {
-                    method: 'PATCH',
-                    headers,
-                    body: JSON.stringify({ id_usuario: sol.id_usuario }),
-                }
+                { method: 'PATCH', headers, body: JSON.stringify({ id_usuario: sol.id_usuario }) }
             );
             if (!res.ok) throw new Error('Error al rechazar');
-
             setSolicitudes(prev => prev.filter(s => s.id_solicitud !== sol.id_solicitud));
             Swal.fire({ icon: 'info', title: 'Solicitud rechazada', confirmButtonColor: '#0891b2', timer: 2000, showConfirmButton: false });
         } catch (e) {
@@ -205,7 +204,11 @@ function Notificaciones({ usuario, setVista }) {
     return (
         <div className="relative" ref={ref}>
             <button
-                onClick={() => setAbierto(!abierto)}
+                onClick={() => {
+                    const abriendo = !abierto;
+                    setAbierto(abriendo);
+                    if (abriendo) setVistas(true); // ← badge desaparece al abrir
+                }}
                 className="relative bg-cyan-600 hover:bg-cyan-900 p-2 rounded transition"
                 title="Notificaciones"
             >
@@ -224,21 +227,14 @@ function Notificaciones({ usuario, setVista }) {
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
                     <div className="flex items-center justify-between px-4 py-3 bg-cyan-50 border-b border-cyan-100">
                         <h3 className="font-semibold text-cyan-800 text-sm">Notificaciones</h3>
-                        {totalBadge > 0 && (
-                            <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-0.5 rounded-full">
-                                {totalBadge}
-                            </span>
-                        )}
                     </div>
 
                     <div className="max-h-96 overflow-y-auto">
                         {idRol === 3 && solicitudes.length > 0 && (
                             <div className="divide-y divide-cyan-100">
                                 {solicitudes.map(sol => (
-                                    /* Cambiado de bg-yellow-50 a bg-cyan-50/60 para acoplarse al color de la app */
                                     <div key={sol.id_solicitud} className="px-4 py-3 bg-cyan-50/60 hover:bg-cyan-50 transition">
                                         <div className="flex items-start gap-2 mb-2">
-                                            {/* Icono de Espera Vectorial en color azul/cian */}
                                             <svg className="w-5 h-5 text-cyan-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
@@ -246,26 +242,20 @@ function Notificaciones({ usuario, setVista }) {
                                                 <p className="text-sm font-semibold text-cyan-950">
                                                     {sol.usuarios?.nombre} {sol.usuarios?.apellido} quiere ser artista
                                                 </p>
-                                                <p className="text-xs text-cyan-600">
-                                                    {tiempoRelativo(sol.fecha_solicitud)}
-                                                </p>
+                                                <p className="text-xs text-cyan-600">{tiempoRelativo(sol.fecha_solicitud)}</p>
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
-                                            <button
-                                                onClick={() => aprobarSolicitud(sol)}
-                                                className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-1.5 rounded-lg font-semibold transition flex items-center justify-center gap-1"
-                                            >
-                                                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <button onClick={() => aprobarSolicitud(sol)}
+                                                className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-1.5 rounded-lg font-semibold transition flex items-center justify-center gap-1">
+                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                                                 </svg>
                                                 Aprobar
                                             </button>
-                                            <button
-                                                onClick={() => rechazarSolicitud(sol)}
-                                                className="flex-1 bg-red-400 hover:bg-red-500 text-white text-xs py-1.5 rounded-lg font-semibold transition flex items-center justify-center gap-1"
-                                            >
-                                                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <button onClick={() => rechazarSolicitud(sol)}
+                                                className="flex-1 bg-red-400 hover:bg-red-500 text-white text-xs py-1.5 rounded-lg font-semibold transition flex items-center justify-center gap-1">
+                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                                                 </svg>
                                                 Rechazar
@@ -278,7 +268,6 @@ function Notificaciones({ usuario, setVista }) {
 
                         {notificaciones.length === 0 && solicitudes.length === 0 && (
                             <div className="p-8 text-center flex flex-col items-center justify-center">
-                                {/* Campana vacía en SVG */}
                                 <svg className="w-10 h-10 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                 </svg>
@@ -291,7 +280,6 @@ function Notificaciones({ usuario, setVista }) {
                                 {notificaciones.map(n => (
                                     <div key={n.id_notificacion} className="flex gap-3 px-4 py-3 hover:bg-gray-50 transition">
                                         <span className="flex-shrink-0 mt-0.5">
-                                            {/* Iconos vectoriales dinámicos */}
                                             {iconosNotificacion[n.tipo_notificacion] || (
                                                 <svg className="w-5 h-5 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
@@ -299,12 +287,8 @@ function Notificaciones({ usuario, setVista }) {
                                             )}
                                         </span>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-gray-800 leading-snug">
-                                                {n.asunto}
-                                            </p>
-                                            <span className="text-xs text-gray-400 mt-1 block">
-                                                {tiempoRelativo(n.fecha_notificacion)}
-                                            </span>
+                                            <p className="text-sm font-medium text-gray-800 leading-snug">{n.asunto}</p>
+                                            <span className="text-xs text-gray-400 mt-1 block">{tiempoRelativo(n.fecha_notificacion)}</span>
                                         </div>
                                     </div>
                                 ))}
