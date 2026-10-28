@@ -1,6 +1,7 @@
 import Swal from "sweetalert2";
 import Notificaciones from "./Notificaciones";
 import AdminSidebar from "./AdminSidebar";
+import logoArtenauta from '../assets/logo.png';
 
 function HeaderPanel({
     seccion,
@@ -70,7 +71,7 @@ function HeaderPanel({
                     )}
 
                     <img
-                        src="../src/assets/logo.png"
+                        src={logoArtenauta}
                         alt="Logo"
                         className="h-20"
                         onError={(e) => (e.target.style.display = "none")}
