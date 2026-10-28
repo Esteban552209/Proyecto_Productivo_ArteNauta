@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import InicioSesionModal from "../components/InicioSesionModal";
 import RegistroModal from "../components/RegistroModal";
+import logoArtenauta from '../assets/logoArtenauta.png';
 
 function Header({ setPagina, setVista }) {
     const [showLogin, setShowLogin] = useState(false);
@@ -27,7 +28,7 @@ function Header({ setPagina, setVista }) {
             <div
                 className={`transition-all duration-[1000ms] ease-out ${animate ? "translate-x-0 translate-y-0 opacity-100" : "-translate-x-6 -translate-y-2 opacity-0"}`}
             >
-                <img src="../src/assets/LOGO.png" alt="Logo" className="h-20" />
+                <img src={logoArtenauta} alt="Logo" className="h-20" />
             </div>
             <nav
                 className={`transition-all duration-[1000ms] ease-out delay-150 ${animate ? "translate-x-0 translate-y-0 opacity-100" : "translate-x-6 -translate-y-2 opacity-0"}`}
