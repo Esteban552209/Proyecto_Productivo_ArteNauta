@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
+import { API_URL } from "../../../config";
 
-const API_LOCAL_BACKEND = "http://localhost:3000";
 
 function Categorias() {
     const [categorias, setCategorias] = useState([]);
@@ -21,7 +21,7 @@ function Categorias() {
         try {
             setLoading(true);
             const params = buscar ? `?buscar=${encodeURIComponent(buscar)}` : "";
-            const res = await fetch(`${API_LOCAL_BACKEND}/categorias${params}`, {
+            const res = await fetch(`${API_URL}/categorias${params}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -82,7 +82,7 @@ function Categorias() {
 
         try {
             if (modoEdicion) {
-                const res = await fetch(`${API_LOCAL_BACKEND}/categorias/${formulario.id_categoria}`, {
+                const res = await fetch(`${API_URL}/categorias/${formulario.id_categoria}`, {
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
@@ -105,7 +105,7 @@ function Categorias() {
                     confirmButtonText: "Aceptar",
                 });
             } else {
-                const res = await fetch(`${API_LOCAL_BACKEND}/categorias`, {
+                const res = await fetch(`${API_URL}/categorias`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",

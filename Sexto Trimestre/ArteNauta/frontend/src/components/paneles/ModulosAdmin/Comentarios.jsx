@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
+import { API_URL } from "../../../config";
 
-const API_BACKEND = "http://localhost:3000";
 
 function Comentarios() {
     const [comentarios, setComentarios] = useState([]);
@@ -12,7 +12,7 @@ function Comentarios() {
         const token = localStorage.getItem("token");
         try {
             setLoading(true);
-            const res = await fetch(`${API_BACKEND}/admin/comentarios`, {
+            const res = await fetch(`${API_URL}/admin/comentarios`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -51,7 +51,7 @@ function Comentarios() {
 
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`${API_BACKEND}/comentarios/${idComentario}`, {
+            const res = await fetch(`${API_URL}/comentarios/${idComentario}`, {
                 method: "DELETE",
                 headers: {
                     Authorization: `Bearer ${token}`,

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
-import BotonLike from "./BotonLike"; 
+import BotonLike from "./BotonLike";
+import { API_URL } from "../config";
 
 export default function PublicacionesCom({ item }) {
     const [showDetalleModal, setShowDetalleModal] = useState(false);
@@ -28,7 +29,7 @@ export default function PublicacionesCom({ item }) {
         setErrorCom(null);
 
         try {
-            const res = await fetch(`http://localhost:3000/comentarios/${postId}`, {
+            const res = await fetch(`${API_URL}/comentarios/${postId}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -62,7 +63,7 @@ export default function PublicacionesCom({ item }) {
 
         setSubmittingCom(true);
         try {
-            const res = await fetch("http://localhost:3000/comentarios", {
+            const res = await fetch(`${API_URL}/comentarios`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

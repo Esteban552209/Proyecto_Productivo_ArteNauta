@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
+import { API_URL } from '../../../config';
 
-const API_PUBLICACIONES = 'http://localhost:3000/Muro-Publicaciones';
 
 function Publicaciones() {
     const [publicaciones, setPublicaciones] = useState([]);
@@ -12,7 +12,7 @@ function Publicaciones() {
         try {
             const token = localStorage.getItem('token');
 
-            let url = `${API_PUBLICACIONES}?`;
+            let url = `${API_URL}/Muro-Publicaciones?`;
 
             if (busqueda) {
                 url += `buscar=${encodeURIComponent(busqueda)}&`;
@@ -70,7 +70,7 @@ function Publicaciones() {
         try {
             const token = localStorage.getItem('token');
 
-            const res = await fetch(`${API_PUBLICACIONES}/${id}`, {
+            const res = await fetch(`${API_URL}/Muro-Publicaciones/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`

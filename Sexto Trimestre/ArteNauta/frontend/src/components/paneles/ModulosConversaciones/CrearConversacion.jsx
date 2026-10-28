@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
+import { API_URL } from "../../../config";
 
-const API = "http://localhost:3000";
 
 function BuscarUsuario({ usuario, onChatIniciado }) {
     const [correo, setCorreo] = useState("");
@@ -13,7 +13,7 @@ function BuscarUsuario({ usuario, onChatIniciado }) {
         const token = localStorage.getItem("token");
         if (!correo.trim()) return;
 
-        fetch(`${API}/usuarios/buscar?email=${correo.trim()}`, {
+        fetch(`${API_URL}/usuarios/buscar?email=${correo.trim()}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -51,7 +51,7 @@ function BuscarUsuario({ usuario, onChatIniciado }) {
 
         if (!usuarioId || !targetId) return;
 
-        fetch(`${API}/conversaciones`, {
+        fetch(`${API_URL}/conversaciones`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
+import { API_URL } from '../../../config';
 
-const API_BASE = 'http://localhost:3000';
 
 const StatCard = ({ label, value, colorBorder, textColor, icon }) => (
     <div className={`bg-white rounded-2xl shadow-sm p-6 border-l-4 ${colorBorder} flex items-center justify-between transition-all hover:shadow-md`}>
@@ -29,7 +29,7 @@ function Estadisticas() {
             const token = localStorage.getItem("token");
             try {
                 setLoading(true);
-                const res = await fetch(`${API_BASE}/dashboard/estadisticas`, {
+                const res = await fetch(`${API_URL}/dashboard/estadisticas`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
