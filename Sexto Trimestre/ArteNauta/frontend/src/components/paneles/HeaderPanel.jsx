@@ -1,7 +1,7 @@
 import Swal from "sweetalert2";
 import Notificaciones from "./Notificaciones";
 import AdminSidebar from "./AdminSidebar";
-import logoArtenauta from '../assets/logo.png';
+import logoArtenauta from '../../assets/logo.png';
 
 function HeaderPanel({
     seccion,
