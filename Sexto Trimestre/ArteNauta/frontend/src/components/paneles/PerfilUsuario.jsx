@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { supabase } from "../../lib/supabase";
 import MisObras from "./MisObras";
+import { API_URL } from "../../config";
 
-const API_LOCAL_BACKEND = "http://localhost:3000";
 
 function PerfilUsuario({ usuario, setSeccion }) {
     const token = localStorage.getItem("token");
@@ -35,7 +35,7 @@ function PerfilUsuario({ usuario, setSeccion }) {
     const obtenerPerfil = async () => {
         try {
             setCargandoPerfil(true);
-            const res = await fetch(`${API_LOCAL_BACKEND}/perfil`, {
+            const res = await fetch(`${API_URL}/perfil`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -77,7 +77,7 @@ function PerfilUsuario({ usuario, setSeccion }) {
     const handleGuardarDatos = async () => {
         setGuardandoDatos(true);
         try {
-            const res = await fetch(`${API_LOCAL_BACKEND}/perfil/usuario`, {
+            const res = await fetch(`${API_URL}/perfil/usuario`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -120,7 +120,7 @@ function PerfilUsuario({ usuario, setSeccion }) {
     const handleGuardarExtra = async () => {
         setGuardandoExtra(true);
         try {
-            const res = await fetch(`${API_LOCAL_BACKEND}/perfil`, {
+            const res = await fetch(`${API_URL}/perfil`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",

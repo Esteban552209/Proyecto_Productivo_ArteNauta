@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import PublicacionesCom from "../../PublicacionesCom";
+import { API_URL } from "../../../config";
 
-const API_LOCAL_BACKEND = "http://localhost:3000";
 
 function VistaUsuario() {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
@@ -19,7 +19,7 @@ function VistaUsuario() {
         try {
             setLoading(true);
 
-            let url = `${API_LOCAL_BACKEND}/Muro-Publicaciones?buscar=${encodeURIComponent(busqueda)}&ordenFecha=${filtroFecha}`;
+            let url = `${API_URL}/Muro-Publicaciones?buscar=${encodeURIComponent(busqueda)}&ordenFecha=${filtroFecha}`;
             if (filtroLikes) {
                 url += `&ordenLikes=${filtroLikes}`;
             }

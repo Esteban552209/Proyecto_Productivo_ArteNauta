@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
+import { API_URL } from "../config";
 
 export default function BotonLike({
     idPublicacion,
@@ -19,7 +20,7 @@ export default function BotonLike({
             try {
 
                 const res = await fetch(
-                    `http://localhost:3000/publicaciones/${idPublicacion}/likes-info?id_usuario=${idUsuarioActual || ""}`
+                    `${API_URL}/publicaciones/${idPublicacion}/likes-info?id_usuario=${idUsuarioActual || ""}`
                 );
 
                 if (!res.ok) {
@@ -68,7 +69,7 @@ export default function BotonLike({
             const token = localStorage.getItem("token");
 
             const res = await fetch(
-                `http://localhost:3000/publicaciones/${idPublicacion}/like`,
+                `${API_URL}/publicaciones/${idPublicacion}/like`,
                 {
                     method: "POST",
                     headers: {

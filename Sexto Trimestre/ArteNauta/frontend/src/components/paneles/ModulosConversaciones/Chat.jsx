@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
+import { API_URL } from "../../../config";
 
-const API = "http://localhost:3000";
 
 function Chat({ usuario, chatActivo, nombreChat }) {
     const [mensajes, setMensajes] = useState([]);
@@ -10,7 +10,7 @@ function Chat({ usuario, chatActivo, nombreChat }) {
     const cargarMensajes = () => {
         const token = localStorage.getItem("token");
         if (!chatActivo) return;
-        fetch(`${API}/mensajes/${chatActivo}`, {
+        fetch(`${API_URL}/mensajes/${chatActivo}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -34,7 +34,7 @@ function Chat({ usuario, chatActivo, nombreChat }) {
         const token = localStorage.getItem("token");
         if (!texto.trim() || !usuarioId) return;
 
-        fetch(`${API}/mensajes`, {
+        fetch(`${API_URL}/mensajes`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`},
             body: JSON.stringify({

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
+import { API_URL } from "../config";
 
 function RegistroModal({ isOpen, onClose, alCambiarAModalLogin }) {
     const [isClosing, setIsClosing] = useState(false);
@@ -44,7 +45,7 @@ function RegistroModal({ isOpen, onClose, alCambiarAModalLogin }) {
 
         try {
             const respuesta = await fetch(
-                "http://localhost:3000/usuario/registro",
+                `${API_URL}/usuario/registro`,
                 {
                     method: "POST",
                     headers: {
