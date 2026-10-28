@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import InicioSesionModal from "../components/InicioSesionModal";
 import RegistroModal from "../components/RegistroModal";
-import logoArtenauta from '../assets/logo.png';
+import logoArtenauta from '../assets/logoArtenauta.png';
 
 function Header({ setPagina, setVista }) {
     const [showLogin, setShowLogin] = useState(false);
