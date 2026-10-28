@@ -70,7 +70,7 @@ function HeaderPanel({
                     )}
 
                     <img
-                        src="../src/assets/LOGO.png"
+                        src="../src/assets/logo.png"
                         alt="Logo"
                         className="h-20"
                         onError={(e) => (e.target.style.display = "none")}
