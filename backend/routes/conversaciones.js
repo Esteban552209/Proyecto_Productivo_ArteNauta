@@ -1,5 +1,5 @@
 import express from "express";
-import { supabase } from "../config/supabase.js";
+import { pool } from "../config/db.js";
 import { verificarToken } from "../middlewares/verificarToken.js";
 
 const router = express.Router();
@@ -11,14 +11,10 @@ router.get("/usuarios/buscar", verificarToken, async (req, res) => {
         const targetEmail = email || correo;
         if (!targetEmail) return res.status(400).json({ error: "Se requiere un correo" });
 
-        const { data, error } = await supabase
-            .from("usuarios")
-            .select("id_usuario, nombre, apellido, email")
-            .eq("email", targetEmail)
-            .maybeSingle();
+        const querySql = "SELECT id_usuario, nombre, apellido, email FROM usuarios WHERE email = $1";
+        const result = await pool.query(querySql, [targetEmail]);
 
-        if (error) throw error;
-        res.status(200).json(data);
+        res.status(200).json(result.rows[0] || null);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -30,33 +26,25 @@ router.get("/conversaciones/usuario/:id_usuario", verificarToken, async (req, re
         const id_usuario = parseInt(req.params.id_usuario);
         if (!id_usuario) return res.status(400).json({ error: "id_usuario inválido" });
 
-        const { data: misParticipaciones, error: err1 } = await supabase
-            .from("participantes")
-            .select("id_conversacion")
-            .eq("id_usuario", id_usuario);
+        const querySql = `
+            SELECT 
+                p2.id_conversacion,
+                p2.id_usuario AS id_usuario_otro,
+                u.nombre,
+                u.apellido
+            FROM participantes p1
+            JOIN participantes p2 ON p1.id_conversacion = p2.id_conversacion AND p1.id_usuario != p2.id_usuario
+            JOIN usuarios u ON p2.id_usuario = u.id_usuario
+            WHERE p1.id_usuario = $1
+        `;
 
-        if (err1) throw err1;
-        if (!misParticipaciones || misParticipaciones.length === 0) return res.status(200).json([]);
+        const { rows } = await pool.query(querySql, [id_usuario]);
 
-        const idsConversaciones = misParticipaciones.map(p => p.id_conversacion);
-
-        const { data: otrosParticipantes, error: err2 } = await supabase
-            .from("participantes")
-            .select(`
-                id_conversacion,
-                id_usuario,
-                usuarios (id_usuario, nombre, apellido)
-            `)
-            .in("id_conversacion", idsConversaciones)
-            .neq("id_usuario", id_usuario);
-
-        if (err2) throw err2;
-
-        const resultado = otrosParticipantes.map(p => ({
-            id_conversacion: p.id_conversacion,
-            id_usuario_otro: p.id_usuario,
-            nombre_otro: p.usuarios?.nombre
-                ? `${p.usuarios.nombre} ${p.usuarios.apellido || ""}`.trim()
+        const resultado = rows.map(r => ({
+            id_conversacion: r.id_conversacion,
+            id_usuario_otro: r.id_usuario_otro,
+            nombre_otro: r.nombre 
+                ? `${r.nombre} ${r.apellido || ""}`.trim() 
                 : "Usuario"
         }));
 
@@ -72,29 +60,30 @@ router.post("/conversaciones", verificarToken, async (req, res) => {
         const { id_usuario_1, id_usuario_2 } = req.body;
         if (!id_usuario_1 || !id_usuario_2) return res.status(400).json({ error: "Faltan campos" });
 
-        const { data: part1, error: err1 } = await supabase
-            .from("participantes").select("id_conversacion").eq("id_usuario", id_usuario_1);
-        if (err1) throw err1;
+        const checkSql = `
+            SELECT p1.id_conversacion 
+            FROM participantes p1
+            JOIN participantes p2 ON p1.id_conversacion = p2.id_conversacion
+            WHERE p1.id_usuario = $1 AND p2.id_usuario = $2
+            LIMIT 1
+        `;
+        const checkResult = await pool.query(checkSql, [id_usuario_1, id_usuario_2]);
 
-        if (part1 && part1.length > 0) {
-            const ids = part1.map(p => p.id_conversacion);
-            const { data: part2, error: err2 } = await supabase
-                .from("participantes").select("id_conversacion").in("id_conversacion", ids).eq("id_usuario", id_usuario_2);
-            if (err2) throw err2;
-            if (part2 && part2.length > 0) return res.status(200).json({ id_conversacion: part2[0].id_conversacion, existe: true });
+        if (checkResult.rowCount > 0) {
+            return res.status(200).json({ 
+                id_conversacion: checkResult.rows[0].id_conversacion, 
+                existe: true 
+            });
         }
 
-        const { data: nuevaConv, error: err3 } = await supabase
-            .from("conversaciones").insert({ fecha_creacion: new Date().toISOString() }).select("id_conversacion").single();
-        if (err3) throw err3;
+        const convSql = `INSERT INTO conversaciones (fecha_creacion) VALUES ($1) RETURNING id_conversacion`;
+        const convResult = await pool.query(convSql, [new Date().toISOString()]);
+        const id_conversacion = convResult.rows[0].id_conversacion;
 
-        const { error: err4 } = await supabase.from("participantes").insert([
-            { id_conversacion: nuevaConv.id_conversacion, id_usuario: id_usuario_1 },
-            { id_conversacion: nuevaConv.id_conversacion, id_usuario: id_usuario_2 }
-        ]);
-        if (err4) throw err4;
+        const partSql = `INSERT INTO participantes (id_conversacion, id_usuario) VALUES ($1, $2), ($1, $3)`;
+        await pool.query(partSql, [id_conversacion, id_usuario_1, id_usuario_2]);
 
-        res.status(201).json({ id_conversacion: nuevaConv.id_conversacion, existe: false });
+        res.status(201).json({ id_conversacion, existe: false });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -104,10 +93,11 @@ router.post("/conversaciones", verificarToken, async (req, res) => {
 router.get("/mensajes/:id_conversacion", verificarToken, async (req, res) => {
     try {
         const { id_conversacion } = req.params;
-        const { data, error } = await supabase
-            .from("mensajes").select("*").eq("id_conversacion", id_conversacion).order("fecha_envio", { ascending: true });
-        if (error) throw error;
-        res.status(200).json(data || []);
+        
+        const querySql = "SELECT * FROM mensajes WHERE id_conversacion = $1 ORDER BY fecha_envio ASC";
+        const result = await pool.query(querySql, [id_conversacion]);
+        
+        res.status(200).json(result.rows || []);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -122,40 +112,34 @@ router.post("/mensajes", verificarToken, async (req, res) => {
             return res.status(400).json({ error: "Datos incompletos" });
         }
 
-        const { data: nuevoMensaje, error: errorMensaje } = await supabase
-            .from("mensajes")
-            .insert([{ 
-                id_conversacion, 
-                id_usuario, 
-                contenido, 
-                fecha_envio: new Date().toISOString() 
-            }])
-            .select()
-            .single();
+        const msgSql = `
+            INSERT INTO mensajes (id_conversacion, id_usuario, contenido, fecha_envio) 
+            VALUES ($1, $2, $3, $4) 
+            RETURNING *
+        `;
+        const msgParams = [id_conversacion, id_usuario, contenido, new Date().toISOString()];
+        const msgResult = await pool.query(msgSql, msgParams);
+        const nuevoMensaje = msgResult.rows[0];
 
-        if (errorMensaje) throw errorMensaje;
+        const partSql = "SELECT id_usuario FROM participantes WHERE id_conversacion = $1 AND id_usuario != $2 LIMIT 1";
+        const partResult = await pool.query(partSql, [id_conversacion, id_usuario]);
 
-        const { data: otrosParticipantes, error: errorParticipantes } = await supabase
-            .from("participantes")
-            .select("id_usuario")
-            .eq("id_conversacion", id_conversacion)
-            .neq("id_usuario", id_usuario); 
+        if (partResult.rowCount > 0) {
+            const idReceptor = partResult.rows[0].id_usuario;
 
-        if (errorParticipantes) throw errorParticipantes;
-
-        if (otrosParticipantes && otrosParticipantes.length > 0) {
-            const idReceptor = otrosParticipantes[0].id_usuario;
-
-            const { error: errorNotif } = await supabase
-                .from("notificaciones")
-                .insert({
-                    id_usuario: idReceptor, 
-                    asunto: "Tienes un nuevo mensaje en el chat",
-                    tipo_notificacion: "Mensaje", 
-                    fecha_notificacion: new Date().toISOString()
-                });
-
-            if (errorNotif) {
+            try {
+                const notifSql = `
+                    INSERT INTO notificaciones (id_usuario, asunto, tipo_notificacion, fecha_notificacion) 
+                    VALUES ($1, $2, $3, $4)
+                `;
+                const notifParams = [
+                    idReceptor, 
+                    "Tienes un nuevo mensaje en el chat", 
+                    "Mensaje", 
+                    new Date().toISOString()
+                ];
+                await pool.query(notifSql, notifParams);
+            } catch (errorNotif) {
                 console.error("Aviso: El mensaje se envió pero la notificación falló:", errorNotif.message);
             }
         }

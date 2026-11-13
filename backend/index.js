@@ -17,6 +17,7 @@ const app = express();
 const origenesPermitidos = [
     "http://localhost:5173",
     "https://proyectoproductivoartenauta-fronten.vercel.app",
+    "http://32.196.64.79:5173",
 ];
 
 app.use(

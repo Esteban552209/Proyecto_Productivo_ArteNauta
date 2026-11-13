@@ -1,7 +1,7 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { supabase } from "../config/supabase.js";
+import { pool } from "../config/db.js";
 import nodemailer from "nodemailer";
 
 const router = express.Router();
@@ -11,13 +11,11 @@ router.post("/auth/login", async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const { data: usuarioEncontrado, error } = await supabase
-            .from("usuarios")
-            .select("*")
-            .eq("email", email)
-            .maybeSingle();
-
-        if (error) throw error;
+        const result = await pool.query(
+            "SELECT * FROM usuarios WHERE email = $1", 
+            [email]
+        );
+        const usuarioEncontrado = result.rows[0];
 
         if (!usuarioEncontrado) {
             return res.status(401).json({ mensaje: "Correo o contraseña incorrectos" });
@@ -65,15 +63,12 @@ router.post("/auth/forgot-password", async (req, res) => {
     const { email } = req.body;
 
     try {
-        const { data: usuarioEncontrado, error } = await supabase
-            .from("usuarios")
-            .select("*")
-            .eq("email", email)
-            .maybeSingle();
+        const result = await pool.query(
+            "SELECT * FROM usuarios WHERE email = $1", 
+            [email]
+        );
+        const usuarioEncontrado = result.rows[0];
 
-        if (error) throw error;
-
-        // Siempre respondemos éxito por seguridad, para no revelar qué correos están registrados
         if (!usuarioEncontrado) {
             return res.status(200).json({ mensaje: "Si el correo está registrado, recibirás un enlace de recuperación." });
         }
@@ -81,8 +76,7 @@ router.post("/auth/forgot-password", async (req, res) => {
         const secretKey = process.env.JWT_SECRET || "mi_clave_super_secreta_desarrollo";
         const token = jwt.sign({ email }, secretKey, { expiresIn: '15m' });
 
-        // IMPORTANTE: Tu frontend está corriendo con HTTPS según tu vite.config.js
-        const frontUrl = process.env.FRONTEND_URL || "https://localhost:5173";
+        const frontUrl = process.env.FRONTEND_URL || "http://localhost:5173";
         const resetLink = `${frontUrl}/restablecer-clave?token=${token}`;
 
         const transporter = nodemailer.createTransport({
@@ -136,17 +130,13 @@ router.post("/auth/reset-password", async (req, res) => {
 
         const email = decodificado.email;
 
-        // Encriptar la nueva clave
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-        // Actualizar el usuario en Supabase
-        const { error } = await supabase
-            .from("usuarios")
-            .update({ clave: hashedPassword })
-            .eq("email", email);
-
-        if (error) throw error;
+        await pool.query(
+            "UPDATE usuarios SET clave = $1 WHERE email = $2",
+            [hashedPassword, email]
+        );
 
         res.status(200).json({ mensaje: "Tu contraseña ha sido actualizada correctamente." });
     } catch (error) {

@@ -1,6 +1,6 @@
 import express from "express";
 import bcrypt from 'bcrypt';
-import { supabase } from "../config/supabase.js";
+import { pool } from "../config/db.js";
 import { verificarToken } from "../middlewares/verificarToken.js";
 
 const router = express.Router();
@@ -12,20 +12,12 @@ router.post('/usuario/registro', async (req, res) => {
     try {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(clave, saltRounds);
-        const { data, error } = await supabase
-            .from('usuarios')
-            .insert([
-                {
-                    nombre: nombre,
-                    apellido: apellido,
-                    telefono: telefono,
-                    email: email,
-                    clave: hashedPassword,
-                    id_rol: id_rol
-                }
-            ]);
-
-        if (error) throw error;
+        
+        const querySql = `
+            INSERT INTO usuarios (nombre, apellido, telefono, email, clave, id_rol) 
+            VALUES ($1, $2, $3, $4, $5, $6)
+        `;
+        await pool.query(querySql, [nombre, apellido, telefono, email, hashedPassword, id_rol]);
 
         res.status(201).json({ mensaje: 'Usuario registrado exitosamente' });
 
@@ -40,30 +32,43 @@ router.get("/usuarios", verificarToken, async (req, res) => {
     try {
         const { estado, buscar, rol } = req.query;
 
-        let consulta = supabase
-            .from("usuarios")
-            .select(`id_usuario, nombre, apellido, email, estado_cuenta, id_rol, roles!id_rol (id_rol, nombre_rol), fecha_registro`)
-            .order('id_usuario', { ascending: true });
+        let querySql = `
+            SELECT u.id_usuario, u.nombre, u.apellido, u.email, u.estado_cuenta, u.id_rol, u.fecha_registro,
+                   json_build_object(
+                       'id_rol', r.id_rol, 
+                       'nombre_rol', r.nombre_rol
+                   ) AS roles
+            FROM usuarios u
+            LEFT JOIN roles r ON u.id_rol = r.id_rol
+            WHERE 1=1
+        `;
+        let queryParams = [];
+        let paramIndex = 1;
 
+        // Filtro por estado
         if (estado === "true") {
-            consulta = consulta.eq("estado_cuenta", true);
+            querySql += ` AND u.estado_cuenta = true`;
         } else if (estado === "false") {
-            consulta = consulta.eq("estado_cuenta", false);
+            querySql += ` AND u.estado_cuenta = false`;
         }
 
         if (buscar && buscar.trim() !== "") {
-            consulta = consulta.or(`nombre.ilike.%${buscar}%,apellido.ilike.%${buscar}%,email.ilike.%${buscar}%`);
+            querySql += ` AND (u.nombre ILIKE $${paramIndex} OR u.apellido ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex})`;
+            queryParams.push(`%${buscar}%`);
+            paramIndex++;
         }
 
         if (rol && rol.trim() !== "") {
-            consulta = consulta.eq("id_rol", rol); 
+            querySql += ` AND u.id_rol = $${paramIndex}`;
+            queryParams.push(rol);
+            paramIndex++;
         }
 
-        const { data, error } = await consulta;
+        querySql += " ORDER BY u.id_usuario ASC";
 
-        if (error) throw error;
+        const result = await pool.query(querySql, queryParams);
 
-        res.status(200).json(data);
+        res.status(200).json(result.rows || []);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -74,21 +79,30 @@ router.patch("/usuarios/:id", verificarToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { nombre, apellido, estado_cuenta, id_rol } = req.body;
+o
+        const querySql = `
+            WITH updated AS (
+                UPDATE usuarios 
+                SET nombre = $1, apellido = $2, estado_cuenta = $3, id_rol = $4
+                WHERE id_usuario = $5
+                RETURNING id_usuario, nombre, apellido, email, estado_cuenta, id_rol, fecha_registro
+            )
+            SELECT u.*, 
+                   json_build_object(
+                       'nombre_rol', r.nombre_rol
+                   ) AS roles
+            FROM updated u
+            LEFT JOIN roles r ON u.id_rol = r.id_rol;
+        `;
+        
+        const queryParams = [nombre, apellido, estado_cuenta, parseInt(id_rol), id];
+        const result = await pool.query(querySql, queryParams);
 
-        const { data, error } = await supabase
-            .from("usuarios")
-            .update({ 
-                nombre, 
-                apellido, 
-                estado_cuenta, 
-                id_rol: parseInt(id_rol)
-            })
-            .eq("id_usuario", id)
-            .select(`id_usuario, nombre, apellido, email, estado_cuenta, id_rol, roles!id_rol (nombre_rol), fecha_registro`); 
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Usuario no encontrado" });
+        }
 
-        if (error) throw error;
-
-        res.status(200).json(data[0]);
+        res.status(200).json(result.rows[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

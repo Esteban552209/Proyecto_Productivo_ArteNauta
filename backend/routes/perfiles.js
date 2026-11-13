@@ -1,5 +1,5 @@
 import express from "express";
-import { supabase } from "../config/supabase.js";
+import { pool } from "../config/db.js";
 import { verificarToken } from "../middlewares/verificarToken.js";
 
 const router = express.Router();
@@ -9,26 +9,21 @@ router.get("/perfil", verificarToken, async (req, res) => {
     try {
         const id_usuario = req.usuario.id_usuario;
 
-        const { data, error } = await supabase
-            .from("usuarios")
-            .select(`
-                id_usuario,
-                nombre,
-                apellido,
-                email,
-                telefono,
-                perfiles (
-                    id_perfil,
-                    foto_perfil,
-                    descripcion,
-                    ocupacion
-                )
-            `)
-            .eq("id_usuario", id_usuario)
-            .single();
+        const querySql = `
+            SELECT u.id_usuario, u.nombre, u.apellido, u.email, u.telefono,
+                   p.foto_perfil, p.descripcion, p.ocupacion
+            FROM usuarios u
+            LEFT JOIN perfiles p ON u.id_usuario = p.id_usuario
+            WHERE u.id_usuario = $1
+        `;
 
-        if (error) throw error;
-        const perfil = data.perfiles || null;
+        const result = await pool.query(querySql, [id_usuario]);
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Usuario no encontrado" });
+        }
+
+        const data = result.rows[0];
 
         res.status(200).json({
             id_usuario: data.id_usuario,
@@ -36,9 +31,9 @@ router.get("/perfil", verificarToken, async (req, res) => {
             apellido: data.apellido,
             email: data.email,
             telefono: data.telefono,
-            foto_perfil: perfil?.foto_perfil ?? null,
-            descripcion: perfil?.descripcion ?? "",
-            ocupacion: perfil?.ocupacion ?? "",
+            foto_perfil: data.foto_perfil ?? null,
+            descripcion: data.descripcion ?? "",
+            ocupacion: data.ocupacion ?? "",
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -51,18 +46,19 @@ router.patch("/perfil", verificarToken, async (req, res) => {
         const id_usuario = req.usuario.id_usuario;
         const { descripcion, ocupacion } = req.body;
 
-        const { data, error } = await supabase
-            .from("perfiles")
-            .upsert(
-                { id_usuario, descripcion, ocupacion },
-                { onConflict: "id_usuario" }
-            )
-            .select()
-            .single();
+        const querySql = `
+            INSERT INTO perfiles (id_usuario, descripcion, ocupacion) 
+            VALUES ($1, $2, $3)
+            ON CONFLICT (id_usuario) 
+            DO UPDATE SET 
+                descripcion = EXCLUDED.descripcion, 
+                ocupacion = EXCLUDED.ocupacion
+            RETURNING *;
+        `;
 
-        if (error) throw error;
+        const result = await pool.query(querySql, [id_usuario, descripcion, ocupacion]);
 
-        res.status(200).json(data);
+        res.status(200).json(result.rows[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -74,16 +70,20 @@ router.patch("/perfil/usuario", verificarToken, async (req, res) => {
         const id_usuario = req.usuario.id_usuario;
         const { nombre, apellido, telefono } = req.body;
 
-        const { data, error } = await supabase
-            .from("usuarios")
-            .update({ nombre, apellido, telefono })
-            .eq("id_usuario", id_usuario)
-            .select(`id_usuario, nombre, apellido, email, telefono, id_rol`)
-            .single();
+        const querySql = `
+            UPDATE usuarios 
+            SET nombre = $1, apellido = $2, telefono = $3 
+            WHERE id_usuario = $4 
+            RETURNING id_usuario, nombre, apellido, email, telefono, id_rol;
+        `;
 
-        if (error) throw error;
+        const result = await pool.query(querySql, [nombre, apellido, telefono, id_usuario]);
 
-        res.status(200).json(data);
+        if (result.rowCount === 0) {
+            return res.status(404).json({ error: "Usuario no encontrado para actualizar" });
+        }
+
+        res.status(200).json(result.rows[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
