@@ -53,10 +53,28 @@ router.get("/notificaciones/solicitudes", verificarToken, async (req, res) => {
     }
 });
 
+// GET — obtener el estado de la última solicitud del usuario actual
+router.get("/notificaciones/solicitudes/estado", verificarToken, async (req, res) => {
+    try {
+        const id_usuario = req.usuario.id_usuario;
+        
+        const querySql = `
+            SELECT * FROM solicitudes 
+            WHERE id_usuario = $1 AND tipo_solicitud = 'artista' 
+            ORDER BY fecha_solicitud DESC 
+            LIMIT 1
+        `;
+        const result = await pool.query(querySql, [id_usuario]);
+        
+        res.status(200).json(result.rows[0] || null);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // Metodos PATCH
 
-// PATCH — aprobar solicitud (Adaptado y unificado)
+// PATCH — aprobar solicitud
 router.patch("/notificaciones/solicitudes/:id/aprobar", verificarToken, async (req, res) => {
     try {
         const { id } = req.params;

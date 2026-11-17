@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../../lib/supabase";
 import Swal from "sweetalert2";
+import { API_URL } from "../../config";
 
 function SolicitarArtista() {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
     const idUsuario = usuario?.id_usuario;
     const idRol = usuario?.id_rol;
+    const token = localStorage.getItem("token");
 
     const [solicitud, setSolicitud] = useState(null);
     const [mensaje, setMensaje] = useState("");
@@ -20,70 +21,57 @@ function SolicitarArtista() {
     }, []);
 
     async function cargar() {
-        const { data } = await supabase
-            .from("solicitudes")
-            .select("*")
-            .eq("id_usuario", idUsuario)
-            .eq("tipo_solicitud", "artista")
-            .order("fecha_solicitud", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-        setSolicitud(data);
-        setCargando(false);
+        try {
+            const res = await fetch(`${API_URL}/notificaciones/solicitudes/estado`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                setSolicitud(data); // Si no hay, data será null
+            } else {
+                setSolicitud(null);
+            }
+        } catch (err) {
+            console.error("Error al cargar estado de solicitud:", err);
+        } finally {
+            setCargando(false);
+        }
     }
 
     async function enviar() {
         setEnviando(true);
         try {
-            const { data: pendienteExistente, error: errorCheck } =
-                await supabase
-                    .from("solicitudes")
-                    .select("id_solicitud")
-                    .eq("id_usuario", idUsuario)
-                    .eq("tipo_solicitud", "artista")
-                    .eq("estado_solicitud", "pendiente")
-                    .maybeSingle();
-
-            if (errorCheck) throw errorCheck;
-
-            if (pendienteExistente) {
-                await cargar();
-                Swal.fire({
-                    icon: "info",
-                    title: "Ya tienes una solicitud pendiente",
-                    text: "Espera la respuesta del administrador antes de enviar otra.",
-                    confirmButtonColor: "#0891b2",
-                });
-                setEnviando(false);
-                return;
-            }
-
-            const { error } = await supabase.from("solicitudes").insert({
-                id_usuario: idUsuario,
-                tipo_solicitud: "artista",
-                estado_solicitud: "pendiente",
-                mensaje: mensaje.trim() || null,
-                fecha_solicitud: new Date().toISOString(),
+            const res = await fetch(`${API_URL}/notificaciones/solicitudes`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    id_usuario: idUsuario,
+                    tipo_solicitud: "artista",
+                    mensaje: mensaje.trim() || null
+                }),
             });
 
-            if (error) throw error;
+            const data = await res.json();
 
-            const { data: admins } = await supabase
-                .from("usuarios")
-                .select("id_usuario")
-                .eq("id_rol", 3);
-
-            if (admins?.length) {
-                await supabase.from("notificaciones").insert(
-                    admins.map((a) => ({
-                        id_usuario: a.id_usuario,
-                        asunto: "Nueva solicitud de artista",
-                        descripcion: `${usuario.nombre} quiere convertirse en artista.`,
-                        tipo_notificacion: "nueva_solicitud_artista",
-                        leida: false,
-                        fecha_notificacion: new Date().toISOString(),
-                    })),
-                );
+            if (!res.ok) {
+                if ((data.error && data.error.includes("ya existe")) || res.status === 409) {
+                    await cargar();
+                    Swal.fire({
+                        icon: "info",
+                        title: "Ya tienes una solicitud pendiente",
+                        text: "Espera la respuesta del administrador antes de enviar otra.",
+                        confirmButtonColor: "#0891b2",
+                    });
+                    setEnviando(false);
+                    return;
+                }
+                throw new Error(data.error || "Error al procesar la solicitud");
             }
 
             setMostrarForm(false);
@@ -114,7 +102,7 @@ function SolicitarArtista() {
     if (cargando) return null;
 
     // Ya tiene solicitud pendiente (Icono de reloj SVG)
-    if (solicitud?.estado_solicitud === "pendiente") {
+    if (solicitud?.estado_solicitud === "Pendiente" || solicitud?.estado_solicitud === "pendiente") {
         return (
             <div className="flex gap-3 items-start p-4 bg-yellow-50 border border-yellow-200 rounded-xl mt-4">
                 <svg
@@ -144,7 +132,7 @@ function SolicitarArtista() {
     }
 
     // Rechazada — puede volver a intentar (Icono de advertencia SVG)
-    if (solicitud?.estado_solicitud === "rechazada") {
+    if (solicitud?.estado_solicitud === "Rechazada" || solicitud?.estado_solicitud === "rechazada") {
         return (
             <div className="flex gap-3 items-start p-4 bg-red-50 border border-red-200 rounded-xl mt-4">
                 <svg
