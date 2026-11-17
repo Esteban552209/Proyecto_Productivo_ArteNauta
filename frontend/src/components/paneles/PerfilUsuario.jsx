@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-import { supabase } from "../../lib/supabase";
 import MisObras from "./MisObras";
 import { API_URL } from "../../config";
-
 
 function PerfilUsuario({ usuario, setSeccion }) {
     const token = localStorage.getItem("token");
@@ -180,34 +178,34 @@ function PerfilUsuario({ usuario, setSeccion }) {
 
         setSolicitando(true);
         try {
-            const { data: existentes, error: errCheck } = await supabase
-                .from("solicitudes")
-                .select("id_solicitud")
-                .eq("id_usuario", usuario?.id_usuario)
-                .eq("estado_solicitud", "Pendiente");
-
-            if (errCheck) throw errCheck;
-
-            if (existentes && existentes.length > 0) {
-                Swal.fire({
-                    icon: "info",
-                    title: "Ya tienes una solicitud pendiente",
-                    text: "El administrador aún no ha respondido.",
-                    confirmButtonColor: "#0891b2",
-                });
-                return;
-            }
-
-            const { error: errInsert } = await supabase
-                .from("solicitudes")
-                .insert({
+            const res = await fetch(`${API_URL}/notificaciones/solicitudes`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
                     id_usuario: usuario?.id_usuario,
-                    fecha_solicitud: new Date().toISOString(),
-                    tipo_solicitud: "artista",
-                    estado_solicitud: "Pendiente",
-                });
+                    tipo_solicitud: "artista"
+                }),
+            });
 
-            if (errInsert) throw errInsert;
+            const data = await res.json();
+
+            // Manejar si el backend responde con error o restricciones
+            if (!res.ok) {
+                // Si el backend envía un error específico de que ya existe, lo mostramos
+                if (data.error && data.error.includes("ya existe") || res.status === 409) {
+                     Swal.fire({
+                        icon: "info",
+                        title: "Ya tienes una solicitud pendiente",
+                        text: "El administrador aún no ha respondido.",
+                        confirmButtonColor: "#0891b2",
+                    });
+                    return;
+                }
+                throw new Error(data.error || "Error al procesar la solicitud");
+            }
 
             Swal.fire({
                 icon: "success",
@@ -435,7 +433,7 @@ function PerfilUsuario({ usuario, setSeccion }) {
 
             {setSeccion && (
                 <button onClick={() => setSeccion("inicio")} className="text-sm text-cyan-600 hover:underline mt-2 block">
-                    &larr; Volver al inicio
+                    ← Volver al inicio
                 </button>
             )}
         </div>
