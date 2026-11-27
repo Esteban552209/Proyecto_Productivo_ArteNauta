@@ -117,7 +117,7 @@ router.delete(
             const querySql = "DELETE FROM comentarios WHERE id_comentario = $1";
             await pool.query(querySql, [id_comentario]);
 
-            res.status(200).json({ mensaje: "Comentario eliminado con éxito" });
+            res.status(200).json({ message: "Comentario eliminado con éxito" });
         } catch (error) {
             console.error(
                 "Error en DELETE /comentarios/:id_comentario:",
