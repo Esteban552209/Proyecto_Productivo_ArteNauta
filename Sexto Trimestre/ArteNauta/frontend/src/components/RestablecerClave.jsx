@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
+import { API_URL } from "../config";
 
 function RestablecerClave() {
     const [token, setToken] = useState("");
@@ -48,7 +49,7 @@ function RestablecerClave() {
         setCargando(true);
 
         try {
-            const respuesta = await fetch("http://localhost:3000/auth/reset-password", {
+            const respuesta = await fetch(`${API_URL}/auth/reset-password`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

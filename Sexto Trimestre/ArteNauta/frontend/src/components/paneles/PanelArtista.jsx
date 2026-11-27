@@ -6,8 +6,8 @@ import PublicacionesCom from "../PublicacionesCom";
 import HeaderPanel from "./HeaderPanel";
 import Conversaciones from "./ModulosConversaciones/VistaChats";
 import Notificaciones from "./Notificaciones";
+import { API_URL } from "../../config";
 
-const API_LOCAL_BACKEND = "http://localhost:3000";
 
 function PanelArtista({ setVista }) {
     const usuario = JSON.parse(localStorage.getItem("usuario"));
@@ -24,7 +24,7 @@ function PanelArtista({ setVista }) {
         const token = localStorage.getItem("token");
         try {
             setLoading(true);
-            let url = `${API_LOCAL_BACKEND}/Muro-Publicaciones?buscar=${encodeURIComponent(busqueda)}&ordenFecha=${filtroFecha}`;
+            let url = `${API_URL}/Muro-Publicaciones?buscar=${encodeURIComponent(busqueda)}&ordenFecha=${filtroFecha}`;
             if (filtroLikes) url += `&ordenLikes=${filtroLikes}`;
 
             const res = await fetch(url, {

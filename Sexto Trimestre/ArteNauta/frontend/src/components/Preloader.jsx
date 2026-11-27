@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import logo from "../assets/LOGO.png";
+import logo from "../assets/logoArtenauta.png";
 
 function Preloader({ onComplete }) {
     const [mounted, setMounted] = useState(false);

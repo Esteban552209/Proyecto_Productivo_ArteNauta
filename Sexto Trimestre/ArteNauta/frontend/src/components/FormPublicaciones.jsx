@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
 import Swal from "sweetalert2";
+import { API_URL } from "../config";
 
 export default function FormPublicaciones({
     onNuevaPublicacion,
@@ -23,7 +23,7 @@ export default function FormPublicaciones({
         const obtenerCategorias = async () => {
             try {
                 const token = localStorage.getItem("token");
-                const res = await fetch("http://localhost:3000/categorias", {
+                const res = await fetch(`${API_URL}/categorias`, {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -96,7 +96,7 @@ export default function FormPublicaciones({
                 id_categoria: Number(form.id_categoria)
             };
 
-            const res = await fetch("http://localhost:3000/publicaciones", {
+            const res = await fetch(`${API_URL}/publicaciones`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

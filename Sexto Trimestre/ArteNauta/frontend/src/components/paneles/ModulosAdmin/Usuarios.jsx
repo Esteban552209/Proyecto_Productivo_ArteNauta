@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
-const API_LOCAL_USUARIOS = "http://localhost:3000";
+import { API_URL } from "../../../config";
 
 function Usuarios() {
     const [usuarios, setUsuarios] = useState([]);
@@ -20,7 +20,7 @@ function Usuarios() {
             if (rol !== "") params.append("rol", rol);
 
             const res = await fetch(
-                `${API_LOCAL_USUARIOS}/usuarios?${params.toString()}`,
+                `${API_URL}/usuarios?${params.toString()}`,
                 {
                     method: "GET",
                     headers: { 
@@ -98,7 +98,7 @@ function Usuarios() {
 
             try {
                 const res = await fetch(
-                    `${API_LOCAL_USUARIOS}/usuarios/${usuario.id_usuario}`,
+                    `${API_URL}/usuarios/${usuario.id_usuario}`,
                     {
                         method: "PATCH",
                         headers: {

@@ -1,9 +1,7 @@
-//Importaciones
 import { useState, useEffect, useRef } from 'react';
 import Swal from 'sweetalert2';
 import { supabase } from '../../lib/supabase';
-      
-//Dirección del backend
+
 const API = 'http://localhost:3000';
 
 const iconosNotificacion = {
@@ -32,6 +30,16 @@ const iconosNotificacion = {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
     ),
+    like_publicacion: (
+        <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 21C12 21 3 15.5 3 9.5C3 7 5 5 7.5 5C9.5 5 11 6.5 12 8C13 6.5 14.5 5 16.5 5C19 5 21 7 21 9.5C21 15.5 12 21 12 21Z" />
+        </svg>
+    ),
+    comentario_publicacion: (
+        <svg className="w-5 h-5 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+    ),
     Mensaje: (
         <svg className="w-5 h-5 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -47,10 +55,10 @@ function Notificaciones({ usuario, setVista }) {
     const [notificaciones, setNotificaciones] = useState([]);
     const [solicitudes, setSolicitudes] = useState([]);
     const [abierto, setAbierto] = useState(false);
-    const [vistas, setVistas] = useState(false); // ← nuevo
     const ref = useRef(null);
 
-    const totalBadge = vistas ? 0 : notificaciones.length + solicitudes.length; // ← modificado
+    // Badge: solo cuenta las no leídas + solicitudes pendientes
+    const totalBadge = notificaciones.filter(n => !n.leida).length + solicitudes.length;
 
     const headers = {
         'Content-Type': 'application/json',
@@ -72,6 +80,7 @@ function Notificaciones({ usuario, setVista }) {
             }
         });
 
+        // Canal notificaciones en tiempo real
         const canal = supabase
             .channel(nombreCanalNotif)
             .on('postgres_changes', {
@@ -81,23 +90,21 @@ function Notificaciones({ usuario, setVista }) {
                 filter: `id_usuario=eq.${idUsuario}`,
             }, payload => {
                 setNotificaciones(prev => [payload.new, ...prev]);
-                setVistas(false); // ← badge vuelve al recibir nueva notif
             })
             .subscribe();
 
+        // Canal solicitudes (solo admin)
         let canalSol = null;
         if (idRol === 3) {
             canalSol = supabase
                 .channel(nombreCanalSol)
                 .on('postgres_changes', {
                     event: '*', schema: 'public', table: 'solicitudes',
-                }, () => {
-                    cargarSolicitudes();
-                    setVistas(false); // ← badge vuelve al llegar solicitud
-                })
+                }, () => cargarSolicitudes())
                 .subscribe();
         }
 
+        // Canal cambio de rol
         const canalRol = supabase
             .channel(nombreCanalRol)
             .on('postgres_changes', {
@@ -112,7 +119,7 @@ function Notificaciones({ usuario, setVista }) {
                     localStorage.setItem('usuario', JSON.stringify({ ...usuarioActual, id_rol: nuevoRol }));
                     await Swal.fire({
                         icon: 'success',
-                        title: '🎉 ¡Ahora eres Artista!',
+                        title: '¡Ahora eres Artista!',
                         text: 'Serás redirigido a tu nuevo panel.',
                         confirmButtonColor: '#0891b2',
                         confirmButtonText: 'Ir a mi panel',
@@ -160,6 +167,19 @@ function Notificaciones({ usuario, setVista }) {
         }
     }
 
+    // Marca todas las notificaciones como leídas en BD y en estado local
+    async function marcarTodasLeidas() {
+        try {
+            await fetch(`${API}/notificaciones/marcar-leidas`, {
+                method: 'PATCH',
+                headers,
+            });
+            setNotificaciones(prev => prev.map(n => ({ ...n, leida: true })));
+        } catch (e) {
+            console.error('Error marcando notificaciones:', e);
+        }
+    }
+
     async function aprobarSolicitud(sol) {
         try {
             const res = await fetch(
@@ -203,11 +223,15 @@ function Notificaciones({ usuario, setVista }) {
 
     return (
         <div className="relative" ref={ref}>
+            {/* Botón campana */}
             <button
                 onClick={() => {
                     const abriendo = !abierto;
                     setAbierto(abriendo);
-                    if (abriendo) setVistas(true); // ← badge desaparece al abrir
+                    // Al abrir, marcar todas como leídas si hay alguna sin leer
+                    if (abriendo && notificaciones.some(n => !n.leida)) {
+                        marcarTodasLeidas();
+                    }
                 }}
                 className="relative bg-cyan-600 hover:bg-cyan-900 p-2 rounded transition"
                 title="Notificaciones"
@@ -230,6 +254,7 @@ function Notificaciones({ usuario, setVista }) {
                     </div>
 
                     <div className="max-h-96 overflow-y-auto">
+                        {/* Solicitudes pendientes — solo admin */}
                         {idRol === 3 && solicitudes.length > 0 && (
                             <div className="divide-y divide-cyan-100">
                                 {solicitudes.map(sol => (
@@ -246,15 +271,19 @@ function Notificaciones({ usuario, setVista }) {
                                             </div>
                                         </div>
                                         <div className="flex gap-2">
-                                            <button onClick={() => aprobarSolicitud(sol)}
-                                                className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-1.5 rounded-lg font-semibold transition flex items-center justify-center gap-1">
+                                            <button
+                                                onClick={() => aprobarSolicitud(sol)}
+                                                className="flex-1 bg-green-500 hover:bg-green-600 text-white text-xs py-1.5 rounded-lg font-semibold transition flex items-center justify-center gap-1"
+                                            >
                                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                                                 </svg>
                                                 Aprobar
                                             </button>
-                                            <button onClick={() => rechazarSolicitud(sol)}
-                                                className="flex-1 bg-red-400 hover:bg-red-500 text-white text-xs py-1.5 rounded-lg font-semibold transition flex items-center justify-center gap-1">
+                                            <button
+                                                onClick={() => rechazarSolicitud(sol)}
+                                                className="flex-1 bg-red-400 hover:bg-red-500 text-white text-xs py-1.5 rounded-lg font-semibold transition flex items-center justify-center gap-1"
+                                            >
                                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
                                                 </svg>
@@ -266,6 +295,7 @@ function Notificaciones({ usuario, setVista }) {
                             </div>
                         )}
 
+                        {/* Sin notificaciones */}
                         {notificaciones.length === 0 && solicitudes.length === 0 && (
                             <div className="p-8 text-center flex flex-col items-center justify-center">
                                 <svg className="w-10 h-10 text-gray-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -275,10 +305,14 @@ function Notificaciones({ usuario, setVista }) {
                             </div>
                         )}
 
+                        {/* Lista de notificaciones */}
                         {notificaciones.length > 0 && (
                             <div className="divide-y divide-gray-50">
                                 {notificaciones.map(n => (
-                                    <div key={n.id_notificacion} className="flex gap-3 px-4 py-3 hover:bg-gray-50 transition">
+                                    <div
+                                        key={n.id_notificacion}
+                                        className={`flex gap-3 px-4 py-3 hover:bg-gray-50 transition ${!n.leida ? 'bg-cyan-50/40' : ''}`}
+                                    >
                                         <span className="flex-shrink-0 mt-0.5">
                                             {iconosNotificacion[n.tipo_notificacion] || (
                                                 <svg className="w-5 h-5 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -290,6 +324,10 @@ function Notificaciones({ usuario, setVista }) {
                                             <p className="text-sm font-medium text-gray-800 leading-snug">{n.asunto}</p>
                                             <span className="text-xs text-gray-400 mt-1 block">{tiempoRelativo(n.fecha_notificacion)}</span>
                                         </div>
+                                        {/* Punto azul si no leída */}
+                                        {!n.leida && (
+                                            <span className="w-2 h-2 bg-cyan-500 rounded-full flex-shrink-0 mt-2" />
+                                        )}
                                     </div>
                                 ))}
                             </div>

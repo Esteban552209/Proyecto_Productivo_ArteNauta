@@ -46,55 +46,73 @@ export default function PublicacionesCom({ item }) {
     };
 
     const enviarComentario = async (e) => {
-        const token = localStorage.getItem("token");
-        e.preventDefault();
-        if (!nuevoComentario.trim()) return;
+    const token = localStorage.getItem("token");
+    e.preventDefault();
+    if (!nuevoComentario.trim()) return;
 
-        if (!usuarioLogueado) {
-            Swal.fire({
-                icon: "warning",
-                title: "Sesión requerida",
-                text: "Debes iniciar sesión para comentar en esta publicación.",
-                confirmButtonColor: "#0891b2",
-            });
-            return;
+    if (!usuarioLogueado) {
+        Swal.fire({
+            icon: "warning",
+            title: "Sesión requerida",
+            text: "Debes iniciar sesión para comentar en esta publicación.",
+            confirmButtonColor: "#0891b2",
+        });
+        return;
+    }
+
+    setSubmittingCom(true);
+    try {
+        const res = await fetch("http://localhost:3000/comentarios", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                id_publicacion: postId,
+                id_usuario_final: userId,
+                contenido: nuevoComentario.trim(),
+            }),
+        });
+
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.error || "No se pudo publicar el comentario en el servidor.");
         }
 
-        setSubmittingCom(true);
-        try {
-            const res = await fetch("http://localhost:3000/comentarios", {
+        const nuevoComentarioCreado = await res.json();
+        setComentarios((prev) => [...prev, nuevoComentarioCreado]);
+        setNuevoComentario("");
+
+        // ── Notificar al artista si el comentario es de otra persona ──
+        const idArtista = item.id_usuario_artista || item.usuarios?.id_usuario;
+        if (idArtista && String(idArtista) !== String(userId)) {
+            await fetch("http://localhost:3000/notificaciones/comentario", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
+                    id_usuario_artista: idArtista,
+                    id_usuario_comentario: userId,
                     id_publicacion: postId,
-                    id_usuario_final: userId,
-                    contenido: nuevoComentario.trim(),
                 }),
             });
-
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || "No se pudo publicar el comentario en el servidor.");
-            }
-
-            const nuevoComentarioCreado = await res.json();
-            setComentarios((prev) => [...prev, nuevoComentarioCreado]);
-            setNuevoComentario("");
-        } catch (err) {
-            console.error("Error al enviar comentario:", err);
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: "No se pudo publicar tu comentario: " + err.message,
-                confirmButtonColor: "#0891b2",
-            });
-        } finally {
-            setSubmittingCom(false);
         }
-    };
+
+    } catch (err) {
+        console.error("Error al enviar comentario:", err);
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "No se pudo publicar tu comentario: " + err.message,
+            confirmButtonColor: "#0891b2",
+        });
+    } finally {
+        setSubmittingCom(false);
+    }
+};
 
     return (
         <>

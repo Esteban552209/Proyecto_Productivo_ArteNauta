@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
+import { API_URL } from "../../../config";
 
-const API = "http://localhost:3000";
 
 function ListaConversaciones({ usuario, onAbrirChat, recargar }) {
     const [conversaciones, setConversaciones] = useState([]);
@@ -13,7 +13,7 @@ function ListaConversaciones({ usuario, onAbrirChat, recargar }) {
             if (!usuarioId) return;
 
             setLoading(true);
-            fetch(`${API}/conversaciones/usuario/${usuarioId}`, {
+            fetch(`${API_URL}/conversaciones/usuario/${usuarioId}`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",

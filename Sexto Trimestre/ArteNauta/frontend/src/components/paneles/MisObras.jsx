@@ -1,16 +1,13 @@
 import { useState, useEffect } from "react";
 import Swal from "sweetalert2";
+import { API_URL } from "../../config";
 
-const API_LOCAL_BACKEND = "http://localhost:3000";
-
-// ✅ Recibe idUsuario y token como props desde PerfilUsuario
 function MisObras({ idUsuario, token }) {
     const [misObras, setMisObras] = useState([]);
     const [loadingObras, setLoadingObras] = useState(false);
     const [obraEditando, setObraEditando] = useState(null);
     const [formObra, setFormObra] = useState({ titulo: "", descripcion: "" });
 
-    // ✅ Headers reutilizables con el token en cada petición
     const headers = {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
@@ -22,7 +19,7 @@ function MisObras({ idUsuario, token }) {
             try {
                 setLoadingObras(true);
                 const res = await fetch(
-                    `${API_LOCAL_BACKEND}/mis-publicaciones/${idUsuario}`,
+                    `/mis-publicaciones/${idUsuario}`,
                     { headers }
                 );
                 if (!res.ok) throw new Error("Error al obtener tus publicaciones");
@@ -54,8 +51,8 @@ function MisObras({ idUsuario, token }) {
 
         try {
             const res = await fetch(
-                `${API_LOCAL_BACKEND}/publicaciones/${idPublicacion}`,
-                { method: "DELETE", headers }  // ✅ token incluido
+                `/publicaciones/${idPublicacion}`,
+                { method: "DELETE", headers } 
             );
             if (!res.ok) throw new Error("No se pudo eliminar");
 
@@ -64,7 +61,7 @@ function MisObras({ idUsuario, token }) {
             ));
 
             Swal.fire({ icon: "success", title: "Obra eliminada", timer: 1500, showConfirmButton: false });
-        } catch (err) {
+        } catch (error) {
             Swal.fire("Error", "No se pudo eliminar la obra", "error");
         }
     };
@@ -78,10 +75,10 @@ function MisObras({ idUsuario, token }) {
         const idPublicacion = obraEditando.id_publicacion || obraEditando.id;
         try {
             const res = await fetch(
-                `${API_LOCAL_BACKEND}/publicaciones/${idPublicacion}`,
+                `/publicaciones/${idPublicacion}`,
                 {
                     method: "PUT",
-                    headers,                              // ✅ token incluido
+                    headers,
                     body: JSON.stringify(formObra),
                 }
             );
@@ -126,10 +123,10 @@ function MisObras({ idUsuario, token }) {
                                 </div>
                                 <div className="flex gap-2 mt-2">
                                     <button onClick={() => abrirModarEditarObra(obra)} className="text-xs bg-cyan-50 text-cyan-600 hover:bg-cyan-100 px-3 py-1.5 rounded-md font-medium transition">
-                                        ✏️ Editar
+                                        Editar
                                     </button>
                                     <button onClick={() => handleEliminarObra(obra.id_publicacion || obra.id)} className="text-xs bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-md font-medium transition">
-                                        🗑️ Eliminar
+                                        Eliminar
                                     </button>
                                 </div>
                             </div>

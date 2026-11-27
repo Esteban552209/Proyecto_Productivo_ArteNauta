@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
+import { API_URL } from "../config";
 
 function LoginModal({ isOpen, onClose, setVista, alCambiarAModalRegistro }) {
     const [isClosing, setIsClosing] = useState(false);
@@ -22,7 +23,7 @@ function LoginModal({ isOpen, onClose, setVista, alCambiarAModalRegistro }) {
         e.preventDefault();
 
         try {
-            const respuesta = await fetch("http://localhost:3000/auth/login", {
+            const respuesta = await fetch(`${API_URL}/auth/login`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -75,7 +76,7 @@ function LoginModal({ isOpen, onClose, setVista, alCambiarAModalRegistro }) {
         setCargando(true);
 
         try {
-            const respuesta = await fetch("http://localhost:3000/auth/forgot-password", {
+            const respuesta = await fetch(`${API_URL}/auth/forgot-password`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
