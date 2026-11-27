@@ -46,7 +46,11 @@ app.use(categoriasRoutes);
 app.use(perfilesRoutes);
 app.use(reaccionesRoutes);
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Servidor de ArteNauta corriendo en el puerto ${PORT}`);
-});
+if (process.env.NODE_ENV !== "test") {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+        console.log(`Servidor de ArteNauta corriendo en el puerto ${PORT}`);
+    });
+}
+
+export default app;

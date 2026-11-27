@@ -79,7 +79,7 @@ router.patch("/usuarios/:id", verificarToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { nombre, apellido, estado_cuenta, id_rol } = req.body;
-o
+
         const querySql = `
             WITH updated AS (
                 UPDATE usuarios 
